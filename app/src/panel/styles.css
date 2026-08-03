@@ -1,0 +1,851 @@
+/*
+ * 面板樣式。
+ *
+ * 設計目標（2026-08-04 改版）：**一個小窗口**。
+ * 預設只顯示「決定要不要簽」需要的最少資訊，其餘收在 disclosure 後面。
+ * 原本的版本把三段免責、意圖參數、指紋全部攤在預設層，資訊量大到讓人略過，
+ * 而略過正是這個產品最不想要的行為。
+ *
+ * token 沿用 site（Vigil 官網）的系統，讓兩邊看起來是同一個東西：
+ *   中性階 ink/surface、保守小圓角（4/6/8，不 pill）、緊字距、
+ *   accent 只給互動不裝飾。verdict 語義色本來就是從這裡借過去的，維持不動。
+ *
+ * MCP App 的 iframe 寬度由 host 決定，所以不寫死寬度；主題也由 host 推過來，
+ * 所以顏色一律走變數，深淺兩套都要成立。
+ */
+
+:root {
+  /* 表面 */
+  --paper: #f6f7f8;
+  --surface: #ffffff;
+  /*
+   * 淺色的第二層表面比 site 亮一點（site 是 #f1f2f4）。
+   * 指紋列、evidence、verdict 都坐在這一層，而面板的微標籤是 10px；
+   * 底色再暗一階，muted 文字就過不了 AA，四階會被逼到跟三階同一個值。
+   */
+  --surface-2: #f4f5f7;
+  --surface-3: #e8eaed;
+  --line: rgba(0, 0, 0, 0.1);
+  --line-soft: rgba(0, 0, 0, 0.06);
+
+  /*
+   * 文字四階。
+   *
+   * 四階不是「更淡」而是「更小的字用的」——面板的微標籤都是 10px，
+   * WCAG AA 對這個尺寸要 4.5:1（13.5px 加粗也還不算大字）。
+   * 2026-08-04 實測原本從 site 搬過來的值在深色只有 3.30、淺色 4.08，
+   * 所以這裡的四階比 site 深，層次靠亮度差不是靠淡。
+   * 下限由 test/styles.test.ts 釘住。
+   */
+  --text: #16181a;
+  --text-2: #4a4f57;
+  --text-3: #5f646c;
+  --text-4: #6a6f77;
+
+  /* 唯一功能色，只給互動。Monad Purple（官方 brand kit），8/6 從 Coinbase 藍換過來 */
+  --accent: #6e54ff;
+  --on-accent: #ffffff;
+
+  /* verdict 語義色 */
+  --match: #3f7a56;
+  --partial: #8f631a;
+  --mismatch: #c2352c;
+  --blocked: #5b6472;
+  --match-bg: #eef5f0;
+  --partial-bg: #fbf4e8;
+  --mismatch-bg: #fbecea;
+  --blocked-bg: #eef0f3;
+
+  --ui: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI",
+    "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --tight: -0.02em;
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 8px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #08090a;
+    --surface: #0f1011;
+    --surface-2: #191a1b;
+    --surface-3: #28282c;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-soft: rgba(255, 255, 255, 0.05);
+    --text: #f7f8f8;
+    --text-2: #d0d6e0;
+    --text-3: #9096a0;
+    --text-4: #848a93;
+    --accent: #8b78ff;
+    --on-accent: #06122e;
+    --match: #74a487;
+    --partial: #d2a05a;
+    --mismatch: #e8695f;
+    --blocked: #8a93a1;
+    --match-bg: #15211a;
+    --partial-bg: #292014;
+    --mismatch-bg: #2d1817;
+    --blocked-bg: #1d222a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #08090a;
+  --surface: #0f1011;
+  --surface-2: #191a1b;
+  --surface-3: #28282c;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-soft: rgba(255, 255, 255, 0.05);
+  --text: #f7f8f8;
+  --text-2: #d0d6e0;
+  --text-3: #9096a0;
+  /* 10px 微標籤要過 AA，不能用 site 那個 #62666d（實測 3.30） */
+  --text-4: #848a93;
+  --accent: #8b78ff;
+  --on-accent: #06122e;
+  --match: #74a487;
+  --partial: #d2a05a;
+  --mismatch: #e8695f;
+  --blocked: #8a93a1;
+  --match-bg: #15211a;
+  --partial-bg: #292014;
+  --mismatch-bg: #2d1817;
+  --blocked-bg: #1d222a;
+}
+
+:root[data-theme="light"] {
+  --paper: #f6f7f8;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --surface-3: #e8eaed;
+  --line: rgba(0, 0, 0, 0.1);
+  --line-soft: rgba(0, 0, 0, 0.06);
+  --text: #16181a;
+  --text-2: #4a4f57;
+  --text-3: #5f646c;
+  --text-4: #6a6f77;
+  --accent: #6e54ff;
+  --on-accent: #ffffff;
+  --match: #3f7a56;
+  --partial: #8f631a;
+  --mismatch: #c2352c;
+  --blocked: #5b6472;
+  --match-bg: #eef5f0;
+  --partial-bg: #fbf4e8;
+  --mismatch-bg: #fbecea;
+  --blocked-bg: #eef0f3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 13.5px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * overflow 不設 hidden：host 會夾面板高度（SDK 的 maxHeight），夾到的時候
+ * hidden 等於把下半截永久藏起來、也捲不到。可見性優先於圓角。
+ */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+/* 大寫 mono 微標籤 —— site 那套「證據聲音」 */
+.tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+/* ── 頁首 ────────────────────────────────────────── */
+
+.p-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.p-head .mark {
+  width: 17px;
+  height: 17px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.p-head .name {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: var(--tight);
+  flex: 1;
+}
+.p-head .src {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.p-head .src .live {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--match);
+}
+
+/* ── 分頁 ────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 14px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.tabs button {
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-4);
+  cursor: pointer;
+  position: relative;
+  transition: color 140ms ease;
+}
+.tabs button[aria-selected="true"] {
+  color: var(--text);
+}
+.tabs button[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1.5px;
+  background: var(--text);
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ── 意圖 ────────────────────────────────────────── */
+
+.block {
+  padding: 12px 14px 0;
+}
+.label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  margin-bottom: 5px;
+}
+.intent {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: var(--tight);
+  margin: 0;
+  text-wrap: balance;
+}
+.no-intent {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+/*
+ * 意圖參數預設收起來。它們多半是那句話的重複（「質押 0.25 MON」已經講完
+ * amount），攤在預設層只是增加要讀的東西。
+ */
+.more {
+  margin-top: 6px;
+}
+.more > summary {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  transition: color 140ms ease;
+}
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+.more > summary::after {
+  content: "＋";
+  font-size: 9px;
+}
+.more[open] > summary::after {
+  content: "−";
+}
+@media (hover: hover) and (pointer: fine) {
+  .more > summary:hover {
+    color: var(--text-2);
+  }
+}
+/* keyframe 而不是 transition：面板每次都是整段重畫，新節點跑不了 transition */
+.more[open] > .more-body {
+  animation: reveal 200ms var(--ease-out);
+}
+
+.params {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+.params dt {
+  color: var(--text-4);
+}
+.params dd {
+  margin: 0;
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+  color: var(--text-2);
+}
+
+/* ── 結論 ────────────────────────────────────────── */
+
+.verdict {
+  margin: 12px 14px 0;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.v-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: var(--tight);
+}
+.v-glyph {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.v-note {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.verdict ul {
+  margin: 5px 0 0;
+  padding-left: 15px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.verdict li + li {
+  margin-top: 2px;
+}
+
+/* 一致刻意不搶眼，避免養成「看到綠色就按」的反射 */
+.verdict[data-kind="match"] {
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+.verdict[data-kind="match"] .v-head {
+  color: var(--match);
+  font-weight: 500;
+}
+.verdict[data-kind="noIntent"] {
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+.verdict[data-kind="noIntent"] .v-head {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.verdict[data-kind="partial"] {
+  background: var(--partial-bg);
+}
+.verdict[data-kind="partial"] .v-head {
+  color: var(--partial);
+}
+.verdict[data-kind="blocked"] {
+  background: var(--blocked-bg);
+}
+.verdict[data-kind="blocked"] .v-head {
+  color: var(--blocked);
+}
+/* 不一致是這個產品存在的理由，唯一允許搶版面的狀態 */
+.verdict[data-kind="mismatch"] {
+  background: var(--mismatch-bg);
+  box-shadow: inset 2px 0 0 var(--mismatch);
+}
+.verdict[data-kind="mismatch"] .v-head {
+  color: var(--mismatch);
+  font-size: 14.5px;
+}
+
+/* ── 鏈上會發生的 ────────────────────────────────── */
+
+.findings {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0 0 12px;
+}
+.findings li {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: baseline;
+  gap: 3px 8px;
+  padding: 4px 14px;
+  font-size: 13px;
+}
+.findings .cat {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--text-4);
+}
+.findings .cat[data-d="out"] {
+  color: var(--partial);
+}
+.findings .cat[data-d="in"] {
+  color: var(--match);
+}
+.findings .cat[data-d="approval"] {
+  color: var(--mismatch);
+}
+.findings .body {
+  min-width: 0;
+  color: var(--text);
+}
+.findings .evidence {
+  grid-column: 1 / -1;
+}
+
+/* 依據鍵縮成一個記號，不跟內容搶。文字仍在 aria-label 裡。 */
+.srcbtn {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-4);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.srcbtn[aria-expanded="true"] {
+  color: var(--text);
+  border-color: var(--text-4);
+}
+@media (hover: hover) and (pointer: fine) {
+  .srcbtn:hover {
+    color: var(--text-2);
+    border-color: var(--text-4);
+  }
+}
+
+.evidence {
+  margin: 6px 0 4px;
+  padding: 8px 10px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  overflow-x: auto;
+  animation: reveal 200ms var(--ease-out);
+}
+.evidence div {
+  display: flex;
+  gap: 8px;
+  white-space: pre;
+}
+.evidence .k {
+  color: var(--text-4);
+  min-width: 62px;
+}
+.evidence .cap {
+  display: block;
+  white-space: normal;
+  font-family: var(--ui);
+  font-size: 10px;
+  color: var(--text-4);
+  margin-bottom: 5px;
+}
+
+/* ── 原始資料分頁 ────────────────────────────────── */
+
+.rawtable {
+  padding: 4px 14px 12px;
+}
+.rawtable .rt {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  overflow-x: auto;
+}
+.rawtable .rt div {
+  display: flex;
+  gap: 8px;
+  white-space: pre;
+}
+.rawtable .rt .k {
+  color: var(--text-4);
+  min-width: 62px;
+}
+.rawtable .idx {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-4);
+  letter-spacing: 0.06em;
+}
+
+.degraded {
+  margin: 10px 14px 0;
+  padding: 8px 10px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+/* ── 頁尾 ────────────────────────────────────────── */
+
+.p-foot {
+  padding: 11px 14px 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.p-foot .actions {
+  display: flex;
+  gap: 7px;
+}
+.p-foot button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: var(--tight);
+  padding: 9px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease;
+}
+.p-foot button:active {
+  transform: scale(0.97);
+}
+.p-foot .sign {
+  flex: 1;
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+.p-foot .sign[disabled] {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--text-4);
+  cursor: not-allowed;
+}
+.p-foot .sign[disabled]:active {
+  transform: none;
+}
+
+/* 指紋是要被人比對的東西，給它 mono 與字距，不要縮成註腳 */
+.fp {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+  padding: 7px 10px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.fp .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+.fp .v {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+/*
+ * 免責那三段是這個產品的誠實層，不能刪，但也不該預設佔掉半個面板。
+ * 收在 disclosure 後面，預設只留一句話講機器驗了什麼。
+ */
+.notes {
+  margin-top: 9px;
+}
+.notes > summary {
+  font-size: 11px;
+  color: var(--text-3);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  transition: color 140ms ease;
+}
+.notes > summary::-webkit-details-marker {
+  display: none;
+}
+.notes > summary::after {
+  content: "＋";
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-4);
+}
+.notes[open] > summary::after {
+  content: "−";
+}
+@media (hover: hover) and (pointer: fine) {
+  .notes > summary:hover {
+    color: var(--text-2);
+  }
+}
+.notes[open] .notes-body {
+  animation: reveal 200ms var(--ease-out);
+}
+.notes .handoff {
+  margin: 7px 0 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-3);
+}
+.notes code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+}
+
+/* ── 交接退路 ────────────────────────────────────── */
+
+.handoff-fallback {
+  margin-bottom: 10px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.handoff-fallback[data-kind="blocked"] {
+  border-color: var(--partial);
+  background: var(--partial-bg);
+}
+.handoff-fallback .note {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.handoff-fallback .note.tiny {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  color: var(--text-4);
+}
+.handoff-fallback .handoff-url {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  resize: vertical;
+  word-break: break-all;
+}
+.handoff-fallback .handoff-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.handoff-fallback .copy-handoff,
+.handoff-fallback .open-handoff {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: transform 140ms var(--ease-out);
+}
+.handoff-fallback .copy-handoff:active,
+.handoff-fallback .open-handoff:active {
+  transform: scale(0.97);
+}
+.handoff-fallback .open-handoff {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+/* ── 狀態 ────────────────────────────────────────── */
+
+.loading,
+.failed {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+.failed {
+  color: var(--mismatch);
+}
+
+/* ── 動態 ────────────────────────────────────────── */
+
+/*
+ * 進場只做一次，而且只在有 receipt 的那幾行 stagger。
+ * 面板是「看一眼決定簽不簽」的東西，不是可以慢慢欣賞的頁面，
+ * 所以位移很小、時間短，目的是把視線帶到證據上，不是表演。
+ */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.p-body[data-enter="1"] .block,
+.p-body[data-enter="1"] .verdict,
+.p-body[data-enter="1"] .findings li {
+  animation: rise 260ms var(--ease-out) backwards;
+}
+.p-body[data-enter="1"] .verdict {
+  animation-delay: 60ms;
+}
+.p-body[data-enter="1"] .findings li:nth-child(1) {
+  animation-delay: 110ms;
+}
+.p-body[data-enter="1"] .findings li:nth-child(2) {
+  animation-delay: 150ms;
+}
+.p-body[data-enter="1"] .findings li:nth-child(3) {
+  animation-delay: 190ms;
+}
+.p-body[data-enter="1"] .findings li:nth-child(n + 4) {
+  animation-delay: 230ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* 可編輯的參數（host 支援 serverTools 時才出現） */
+.params .pedit {
+  width: 100%;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+.params .pedit:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+.resim {
+  margin-top: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out);
+}
+.resim:active {
+  transform: scale(0.97);
+}
+.resim:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+.resim:disabled:active {
+  transform: none;
+}
+.resim-note {
+  margin: 5px 0 0;
+  font-size: 10.5px;
+  color: var(--text-3);
+}

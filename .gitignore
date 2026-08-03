@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.vitest/
+*.tsbuildinfo
+
+# 金鑰與環境設定一律不進版控
+.env
+.env.*
+*.key
+*.pem
+
+# 建置產物。要看就自己 pnpm build:all，這樣才確定跟原始碼一致
+app/panel/index.html
+app/sign/index.html
+app/mock/index.html
+app/fixtures.json
+
+.DS_Store
+Thumbs.db
+
+# 打包產物
+*.zip

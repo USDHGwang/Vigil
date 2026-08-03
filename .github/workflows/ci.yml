@@ -1,0 +1,88 @@
+# 每次推送都跑。這支的綠燈就是 README 上那顆 badge。
+#
+# 刻意跳過打 Monad 主網的那幾個測試（MOSS_SKIP_E2E=1）：公開 RPC 會限流，
+# 讓外部因素弄紅 CI 會讓 badge 失去意義 —— 綠燈要代表「我們的程式碼沒問題」，
+# 不是「今天 RPC 心情好」。主網那批在 live.yml，每天跑一次。
+#
+# 這支同時在驗證一件 README 上的宣稱：clone 下來就裝得起來。
+# runner 每次都是全新機器，沒有任何本機殘留，`pnpm install` 過不了就是紅的。
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # package.json 宣告 engines.node ">=22"。跑兩個版本才知道那句是真的還是
+        # 只是寫爽的 —— 我們在 24 上開發，22 沒人試過。
+        node: [22, 24]
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 明確指定版本。v4 沒有 package_json_file 這個 input（那是 v6 才有的），
+      # 而我們的 package.json 不在 repo 根，讓它自己找會找不到。
+      # 這個版本要跟 app/package.json 的 packageManager 一致，不一致 pnpm 自己會擋。
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      # --frozen-lockfile：lockfile 跟 package.json 對不上就失敗，
+      # 不要讓 CI 默默裝一個跟本機不同的相依樹
+      - name: 安裝（會一併建 vendor 裡的 Moss）
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: 測試（不含主網實跑）
+        run: pnpm test
+        env:
+          MOSS_SKIP_E2E: "1"
+
+      # 建置產物沒進版控，所以這一步是唯一會發現「打包壞掉」的地方
+      - name: 建置全部產物
+        run: pnpm build:all
+
+      - name: 確認產物真的產出來了
+        run: |
+          set -e
+          for f in panel/index.html sign/index.html mock/index.html dist/cli.js; do
+            test -s "$f" || { echo "缺少或空的產物：$f"; exit 1; }
+            echo "ok  $f  ($(wc -c < "$f") bytes)"
+          done
+
+      # 面板跑在 MCP App 的 sandbox 裡，connect-src 預設是 none。
+      # 混進一個外部 script 或 stylesheet 就整個載不起來，而且本機開檔案時看不出來。
+      - name: 確認面板與簽名頁是自包含的
+        run: |
+          set -e
+          for f in panel/index.html sign/index.html; do
+            if grep -qE '<(script|link)[^>]+(src|href)=["'"'"']https?:' "$f"; then
+              echo "$f 含有外部資源，sandbox 裡會載不到"
+              exit 1
+            fi
+            echo "ok  $f 自包含"
+          done

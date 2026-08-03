@@ -1,0 +1,53 @@
+{
+  "name": "vigil",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "//engines": "Moss 用了較新的 Node API；不宣告的話別人用舊版會炸在莫名其妙的地方",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.14.0",
+  "scripts": {
+    "//": "vendor 的 Moss 走 dist 解析，pnpm install 之後要先編才用得了。見 vendor/moss/README.md",
+    "prepare": "pnpm -r --filter \"./vendor/**\" build",
+    "build:vendor": "pnpm -r --filter \"./vendor/**\" build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm typecheck && pnpm test",
+    "build:mcp": "tsup src/mcp/cli.ts --format esm --target es2022 --clean --out-dir dist",
+    "mcp": "vite-node src/mcp/cli.ts",
+    "mcp:http": "vite-node src/mcp/http.ts",
+    "build:panel": "vite-node scripts/build-panel.ts",
+    "build:mock": "vite-node scripts/build-mock.ts",
+    "build:all": "pnpm build:panel && pnpm build:sign && pnpm build:mock && pnpm build:mcp",
+    "demo": "vite-node scripts/demo.ts",
+    "handoff-url": "vite-node scripts/handoff-url.ts",
+    "build:sign": "vite-node scripts/build-sign.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@themoss/core": "workspace:*",
+    "@themoss/erc": "workspace:*",
+    "@themoss/protocol-kuru": "workspace:*",
+    "@themoss/protocol-shmonad": "workspace:*",
+    "@themoss/simulator": "workspace:*",
+    "@themoss/system": "workspace:*",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "viem": "^2.21.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.2",
+    "esbuild": "^0.28.1",
+    "tsup": "^8.5.1",
+    "typescript": "5.9.3",
+    "vite-node": "^6.0.0",
+    "vitest": "^3.2.4"
+  }
+}

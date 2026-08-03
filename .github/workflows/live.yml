@@ -1,0 +1,54 @@
+# 對 Monad 主網的實跑，跟 CI 分開。
+#
+# 為什麼分開：這批會打公開 RPC，限流或節點抖動都會讓它紅，而那不代表我們的
+# 程式碼壞了。混進 CI 會讓那顆 badge 變成噪音。
+#
+# 但它要跑，而且要定期跑 —— 我們對 Moss、對 shMONAD 合約、對 RPC 行為都有假設，
+# 上游改了東西我們要知道，不是等 demo 當天才發現。
+#
+# 只有模擬，不簽名不送出，不花任何錢。
+
+name: 主網實跑
+
+on:
+  schedule:
+    # 每天 UTC 00:00（台灣早上八點），John 起床時結果已經在了
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  live:
+    name: 對 Monad 主網跑模擬
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: 安裝
+        run: pnpm install --frozen-lockfile
+
+      # 先確認節點本身是活的。這一步紅了就知道是 RPC 的事，不用去翻測試輸出。
+      - name: RPC 探活
+        run: |
+          set -e
+          chain=$(curl -s -X POST https://rpc.monad.xyz \
+            -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+            | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"])')
+          echo "chain id: $chain"
+          test "$chain" = "0x8f" || { echo "不是 Monad 主網（期望 0x8f）"; exit 1; }
+
+      - name: 全部測試，含主網實跑
+        run: pnpm test

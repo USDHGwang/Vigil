@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+
+# Moss 收在 vendor/ 底下當工作區成員，這樣 pnpm install 會一併裝好它們自己的
+# 相依（viem、zod），clone 這個 repo 的人不需要另外準備任何東西。
+# 為什麼要 vendor 見 vendor/moss/README.md。
+packages:
+  - "vendor/moss/packages/*"
+  - "vendor/moss/packages/protocols/*"
