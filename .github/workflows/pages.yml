@@ -1,0 +1,106 @@
+# 把介紹站與簽名頁一起部署到 GitHub Pages。
+#
+# 為什麼這兩個放在一起：
+#   - 站（site/）是 Next.js 靜態匯出，本來就要一個公開網址。
+#   - 簽名頁（app/sign/index.html）是完全自包含的靜態 HTML，交易資料在網址的
+#     `#` 後面、不會送到伺服器，所以它不需要後端，可以跟站放同一個地方。
+#
+# 為什麼簽名頁需要公開 https 網址：本機模式下它是
+# `http://127.0.0.1:<每次都不同的 port>/sign`，而 MCP host 對面板能開哪些網址
+# 有政策——localhost 加浮動 port 正好是最容易被擋的形狀。2026-08-04 實測
+# `openLink` 回 isError，使用者按下簽名什麼都不會發生。指到固定的 https 網址
+# 通常就不再被擋（這件事要部署完才驗得到，見 docs/HANDOFF）。
+#
+# 部署後要把 MCP server 指過去：
+#   claude_desktop_config.json 的 env 加
+#   "SIGN_PAGE_URL": "https://usdhgwang.github.io/Vigil/sign/"
+
+name: Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時只跑一個部署，但不取消進行中的——取消到一半會留下半套的線上版本
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.14.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # ── 簽名頁 ──────────────────────────────────────────────
+      # 產物沒進版控，所以這裡要真的建一次。這一步同時是個檢查：
+      # 建不出來就不會部署一個過期的簽名頁上去。
+      - name: 安裝 app（會一併建 vendor 裡的 Moss）
+        working-directory: app
+        run: pnpm install --frozen-lockfile
+
+      - name: 建簽名頁
+        working-directory: app
+        run: pnpm build:sign
+
+      # ── 站 ─────────────────────────────────────────────────
+      - name: 安裝 site
+        working-directory: site
+        run: pnpm install --frozen-lockfile
+
+      - name: 建站（子路徑託管）
+        working-directory: site
+        env:
+          # repo 叫 Vigil，Pages 網址就是 /Vigil/。不設這個所有資源會 404。
+          PAGES_BASE_PATH: /Vigil
+        run: pnpm build
+
+      # ── 合併 ────────────────────────────────────────────────
+      - name: 把簽名頁放進站的產物
+        run: |
+          set -e
+          mkdir -p site/out/sign
+          cp app/sign/index.html site/out/sign/index.html
+          test -s site/out/sign/index.html
+          echo "sign/index.html  $(wc -c < site/out/sign/index.html) bytes"
+
+      # 簽名頁跑在一般瀏覽器裡（不是 sandbox），但它一樣必須自包含：
+      # 它要在使用者的錢包瀏覽器裡獨立運作，載不到外部資源才不會有東西壞掉。
+      - name: 確認簽名頁自包含
+        run: |
+          set -e
+          if grep -qE '<(script|link)[^>]+(src|href)=["'"'"']https?:' site/out/sign/index.html; then
+            echo "簽名頁含有外部資源"
+            exit 1
+          fi
+          echo "ok 自包含"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

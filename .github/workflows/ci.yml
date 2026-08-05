@@ -57,6 +57,13 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # 測試要吃 build 產物：signhost 的測試吃 build:sign 的產物（app/sign/index.html），
+      # mcp-server 的 resource 測試吃 build:panel 的產物（app/panel/index.html）。
+      # 產物沒進版控，fresh checkout 上沒有 —— 所以測試前先建。
+      # 2026-08-06 教訓：先前這支一直紅，就是測試跑在建置前。
+      - name: 建面板與簽名頁（測試需要）
+        run: pnpm build:panel && pnpm build:sign
+
       - name: 測試（不含主網實跑）
         run: pnpm test
         env:

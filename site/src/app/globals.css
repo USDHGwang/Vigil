@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+/*
+ * Vigil — design tokens
+ *
+ * 品牌骨架：拉丁文 vigil = 守夜人。看見、回報、不替你決定。
+ * 設計語言 = 三套高信譽系統的整合（非抄）：
+ *   - Linear 的「黑暗即空間」：暗 canvas、內容從黑暗中浮現 = 守夜人的夜晚
+ *   - Stripe 的 weight-300 輕字重低語式權威 + deep navy 標題
+ *   - Coinbase 藍當唯一功能性 accent（只給互動/CTA，不裝飾）
+ * verdict 色（match 綠 / mismatch 紅）借自 panel，是語義不是風格。
+ */
+
+@theme {
+  /* 暗色表面 — Linear 系 */
+  --color-canvas: #0a0e18;        /* 行銷黑，最深畫布（帶藍調的暗夜，非死黑） */
+  --color-panel: #10141f;         /* 面板 */
+  --color-surface: #191f2c;       /* 提升面 */
+  --color-surface-2: #28282c;     /* 最亮的暗面 */
+
+  /* 文字 — Linear 系 / Stripe deep navy 精神 */
+  --color-ink: #f7f8f8;           /* 主文字，非純白 */
+  --color-ink-2: #d0d6e0;         /* 次要 */
+  --color-ink-3: #8a8f98;         /* 三級 */
+  --color-ink-4: #62666d;         /* 四級 */
+
+  /* 功能性 accent — Coinbase 藍，唯一彩色（只給 CTA/互動） */
+  --color-accent: #0052ff;
+  --color-accent-hover: #578bfa;
+  --color-link: #0072f5;
+
+  /* verdict 語義色（借自 panel，非風格） */
+  --color-match: #74a487;
+  --color-match-bg: #15211a;
+  --color-partial: #d2a05a;
+  --color-partial-bg: #292014;
+  --color-mismatch: #e8695f;
+  --color-mismatch-bg: #2d1817;
+  --color-blocked: #8a93a1;
+  --color-blocked-bg: #1d222a;
+
+  /* 邊框 — 半透明白（Linear：月光下畫的線框） */
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-soft: rgba(255, 255, 255, 0.05);
+
+  /* 字體 — next/font 的 variable（layout.tsx 用 Geist + Geist Mono） */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
+    Consolas, "Liberation Mono", monospace;
+
+  /* 字距 — Vercel/Linear 壓縮宣言 */
+  --tracking-display: -0.04em;
+  --tracking-tight: -0.02em;
+
+  /* 半徑 — 保守小圓角（Stripe 精神，不 pill） */
+  --radius-subtle: 4px;
+  --radius-std: 6px;
+  --radius-card: 8px;
+
+  /* ease */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: rgba(0, 82, 255, 0.28);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* 大寫 mono 技術標籤 — 「證據聲音」 */
+@layer components {
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+  .tag-accent {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-link);
+  }
+}
+
+/* animejs reveal 的初始隱藏態（用 class 不用 inline style，避免 FOUC 卡住） */
+.reveal-init {
+  opacity: 0;
+  transform: translateY(26px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-init {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 流光邊框（Magic UI Shine Border 手法）：背景漸層移動 → 邊框一圈光在跑 */
+@keyframes shine {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+.shine-border {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background-image: radial-gradient(
+    transparent, transparent,
+    rgba(140, 180, 255, 0.9),
+    transparent, transparent
+  );
+  background-size: 300% 300%;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: shine 12s linear infinite;
+  will-change: background-position;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shine-border { animation: none; opacity: 0.4; }
+}
+
+/* ===== 全域細節 ===== */
+
+/* 選取文字 — 品牌藍，暗底可讀 */
+::selection {
+  background: rgba(0, 82, 255, 0.4);
+  color: #fff;
+}
+
+/* 鍵盤導航 focus ring — 看得見的鍵盤回饋 */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* hero 往下捲提示 — 光點沿線落下 */
+@keyframes scroll-dot {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 28px);
+    opacity: 0;
+  }
+}
+.scroll-dot {
+  animation: scroll-dot 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}

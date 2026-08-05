@@ -106,20 +106,31 @@ That cell is getting more important. MetaMask Advanced Permissions (ERC-7715) is
 ## How it works
 
 ```
-you talk to the agent
-   ↓
-agent calls preview_transaction (MCP tool)
-   ↓
-Moss builds an unsigned tx → debug_traceCall against Monad mainnet → ordered real changes
-   ↓
-humanize · structural comparison · real balance check
-   ↓
-panel (MCP App) or text panel (CLI host)
-   ↓
-you press sign → handoff to the signing page (fingerprint) → your own wallet
+① you say something   the agent restates it and calls preview_transaction.
+                      that restatement is unverified input
+         ↓
+② build               Moss builds the unsigned transaction.
+                      we assume that party can be wrong too
+         ↓
+③ simulate            debug_traceCall against Monad mainnet.
+                      nothing is written, no gas, no signature
+         ↓
+④ check and compare   coverage check (nothing dropped, duplicated, or invented)
+                      · five structural rules · real balance check · humanize
+         ↓
+⑤ you compare         the panel puts "what the agent says you asked for"
+                      next to "what happens on chain"
+         ↓
+⑥ you decide          the panel hands off straight to the signing page, never
+                      back through the agent. Same fingerprint on both pages,
+                      and the wallet checks the account
 ```
 
-`verifyReceiptCoverage` checks that the report and the raw changes correspond one to one: equal count, and object identity per item. That blocks omissions, duplicates, and invented entries.
+Step ⑤ is a person's job, not the machine's. **Step ④ compares the transaction against the operation the agent called, not against the sentence the user said.** Those are different claims, and only the first one is machine-checkable — see [Two layers](#two-layers-of-comparison) below.
+
+Hosts that support MCP Apps render step ⑤ as a panel; CLI agents get an equivalent text panel with the same content.
+
+Inside step ④, `verifyReceiptCoverage` is an integrity check, not the intent comparison: it verifies the report and the raw changes correspond one to one, equal count with object identity per item. That blocks omissions, duplicates, and invented entries. The intent comparison is the five rules below.
 
 ### Two layers of comparison
 

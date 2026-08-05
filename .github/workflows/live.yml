@@ -50,5 +50,10 @@ jobs:
           echo "chain id: $chain"
           test "$chain" = "0x8f" || { echo "不是 Monad 主網（期望 0x8f）"; exit 1; }
 
+      # 測試要吃 build 產物：signhost 吃 build:sign、mcp-server resource 測試吃
+      # build:panel。產物沒進版控，先建。
+      - name: 建面板與簽名頁（測試需要）
+        run: pnpm build:panel && pnpm build:sign
+
       - name: 全部測試，含主網實跑
         run: pnpm test
