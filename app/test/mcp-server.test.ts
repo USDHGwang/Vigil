@@ -193,4 +193,113 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     expect(view.signable).toBe(false);
     expect(() => assertViewInvariants(view)).not.toThrow();
   });
+
+  it("discover 列出可模擬的操作，含 shmonad.stake 與參數描述", { timeout: 180_000 }, async () => {
+    const result = await client.callTool({ name: "discover", arguments: {} });
+
+    const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
+    // 人話版：要能看到質押這項操作
+    expect(text).toContain("shmonad.stake");
+    expect(text).toContain("Monad 上可以模擬的操作");
+
+    // 結構化版：agent 要靠它準備交易，參數描述必須在
+    const { operations } = result.structuredContent as {
+      operations: { protocol: string; method: string; intent: string; params: Record<string, unknown> }[];
+    };
+    const stake = operations.find((o) => o.protocol === "shmonad" && o.method === "stake");
+    expect(stake).toBeDefined();
+    expect(Object.keys(stake?.params ?? {})).toContain("amount");
+
+    // kuru.swap 的 token 參數要提示 native 字面量（agent 會用 0xEeee/WMON 猜，兩條都爆）
+    // overlay 在 text 版（agent 主要讀這個）
+    expect(text).toContain("kuru.swap");
+    expect(text).toContain('literal "native"');
+
+    // discover 只列 capability：讀取類操作不該出現
+    const balanceOf = operations.find((o) => o.method === "balanceOf");
+    expect(balanceOf).toBeUndefined();
+  });
+
+  it("discover 不宣告 UI resource（資料工具，渲染器沒有 view 可畫）", async () => {
+    // 修過一次：discover 帶 _meta.ui.resourceUri 時，host 會嘗試用面板
+    // 渲染它的結果，但 discover 回的是操作清單不是 EvidencePanelView，
+    // 於是顯示「沒有可以顯示的結果」。這是資料工具，不是使用者視圖。
+    const { tools } = await client.listTools();
+    const tool = tools.find((t) => t.name === "discover");
+    const ui = tool?._meta?.ui as { resourceUri?: string } | undefined;
+    expect(ui?.resourceUri).toBeUndefined();
+  });
+
+  it("receiver 省略時視為質押給發送帳戶，模擬照跑", { timeout: 180_000 }, async () => {
+    // 使用者說「幫我質押 0.25 MON」時沒指定收款人——質押給自己是常態。
+    // agent 不該被「不知道 receiver 填什麼」卡住，server 自動補發送帳戶。
+    const result = await previewTool({
+      statedRequest: "幫我質押 0.25 MON",
+      protocol: "shmonad",
+      method: "stake",
+      params: { amount: "0.25" },
+      account: "0xcccccccccccccccccccccccccccccccccccccccc",
+    });
+
+    const { view } = result.structuredContent as { view: EvidencePanelView };
+    // receiver 被補成發送帳戶，模擬不因缺參數中斷
+    expect(view.intent?.params.receiver).toBe("0xcccccccccccccccccccccccccccccccccccccccc");
+    expect(view.receipt).not.toBeNull();
+    expect(() => assertViewInvariants(view)).not.toThrow();
+  });
+
+  it("remember_account 記住後，不帶 account 的預覽用記住的地址", { timeout: 180_000 }, async () => {
+    const WALLET = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const remember = await client.callTool({
+      name: "remember_account",
+      arguments: { address: WALLET },
+    });
+    const remembered = (remember.structuredContent as { remembered?: string }).remembered;
+    expect(remembered).toBe(WALLET);
+
+    const result = await previewTool({
+      statedRequest: "幫我質押 0.25 MON",
+      protocol: "shmonad",
+      method: "stake",
+      params: { amount: "0.25" },
+      // 不帶 account：應該用 remember_account 記住的地址
+    });
+
+    const { view } = result.structuredContent as { view: EvidencePanelView };
+    expect(view.account.toLowerCase()).toBe(WALLET);
+    expect(view.intent?.params.receiver).toBe(WALLET);
+    expect(() => assertViewInvariants(view)).not.toThrow();
+  });
+
+  it("remember_account 不是 UI 工具（不宣告 resource）", async () => {
+    const { tools } = await client.listTools();
+    const tool = tools.find((t) => t.name === "remember_account");
+    expect(tool).toBeDefined();
+    const ui = tool?._meta?.ui as { resourceUri?: string } | undefined;
+    expect(ui?.resourceUri).toBeUndefined();
+  });
+
+  it("vigil 入口工具回總覽：目的、信任模型、指令對照", async () => {
+    const result = await client.callTool({ name: "vigil", arguments: {} });
+
+    const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
+    expect(text).toContain("Vigil — 簽名前檢查");
+    expect(text).toContain("主網模擬");
+    // 指令對照要能帶 agent 找到對應工具
+    expect(text).toContain("vigil-preview");
+    expect(text).toContain("preview_transaction");
+
+    const { commands } = result.structuredContent as {
+      commands: { phrase: string; tool: string }[];
+    };
+    expect(commands).toContainEqual({ phrase: "vigil-preview", tool: "preview_transaction" });
+    expect(commands).toContainEqual({ phrase: "vigil-remember", tool: "remember_account" });
+  });
+
+  it("vigil 入口工具不是 UI 工具", async () => {
+    const { tools } = await client.listTools();
+    const tool = tools.find((t) => t.name === "vigil");
+    const ui = tool?._meta?.ui as { resourceUri?: string } | undefined;
+    expect(ui?.resourceUri).toBeUndefined();
+  });
 });
