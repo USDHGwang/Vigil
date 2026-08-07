@@ -12,7 +12,7 @@
 
 **English** | [繁體中文](README.zh-TW.md)
 
-[**Setup**](app/MCP-SETUP.md)
+[**Setup**](app/MCP-SETUP.md) · [**Live site**](https://vigilapp.vercel.app)
 
 > Latin *vigil*: a watchman. Sees, reports, does not decide for you.
 
@@ -22,7 +22,21 @@ The evidence comes from simulating the transaction on a Monad node. The agent th
 
 ## What it looks like
 
-A normal stake, simulated live against Monad mainnet:
+A normal stake, simulated live against Monad mainnet. This is the MCP Apps panel as it renders inside the conversation:
+
+![Panel: a normal stake](assets/panel-stake.png)
+
+The panel has two blocks. The first is what the agent claims you asked for. The second is what the node says will happen on chain. The `✓` means the machine found no operation it did not expect.
+
+Same conversation, but an injected instruction steered the agent: the user asked to check a balance, the agent built an unlimited approval instead. The panel does not hide either side:
+
+![Panel: an injected instruction](assets/panel-injection.png)
+
+The `!` block is the machine flagging an unlimited approval, and the request and the effect are side by side for the person to compare. When the structure itself contradicts the operation (for example a staking request that approves a stranger instead), the panel shows `✗` and the transaction is not signable.
+
+**No LLM makes that call.** The intent is anchored to the user's own words. The effect comes from the node. When they do not line up, it shows.
+
+CLI agents (Claude Code, Codex) get the same content as text:
 
 ```
 Vigil · Pre-sign check · Evidence comes from simulating on Monad mainnet, not from whatever prepared this transaction
@@ -42,46 +56,9 @@ What happens on-chain
 The machine only verified that the transaction matches this operation.
 Whether it matches what you actually said is for you to check against the
 two sections above.
-The “you” above refers to 0x08299d24…9051ecc0. This address was supplied
-by the agent and was not verified; at signing time the wallet compares it
-and refuses if it doesn't match.
-If you sign, the signing happens in your own wallet — this tool never touches your private key.
 ```
 
-The panel has two blocks. The first is what the agent claims you asked for. The second is what the node says will happen on chain. The `✓` means the machine found no operation it did not expect.
-
-Same conversation, but an injected instruction steered the agent: the user asked to check a balance, the agent built an unlimited approval instead. The panel does not hide either side:
-
-```
-Vigil · Pre-sign check · Evidence comes from simulating on Monad mainnet, not from whatever prepared this transaction
-──────────────────────────────────────────────────────────────────────────
-What the agent says you asked for
-  Check my shMON balance
-  token    0x1B68…E19c
-  spender  0x9F2c…a41b
-  amount   unlimited
-
-!  Something needs your review
-   This transaction gives 0x9F2c…a41b unlimited access — not just this
-      time; it can move this token's balance from now on. Confirm you really
-      want this.
-
-What happens on-chain
-  approve  Approve 0x9F2c…a41b to move your shMON, with no limit
-──────────────────────────────────────────────────────────────────────────
-The machine only verified that the transaction matches this operation.
-Whether it matches what you actually said is for you to check against the
-two sections above.
-The “you” above refers to 0x08299d24…9051ecc0. This address was supplied
-by the agent and was not verified; at signing time the wallet compares it
-and refuses if it doesn't match.
-```
-
-The `!` block is the machine flagging an unlimited approval, and the request and the effect are side by side for the person to compare. When the structure itself contradicts the operation (for example a staking request that approves a stranger instead), the panel shows `✗` and the transaction is not signable.
-
-**No LLM makes that call.** The intent is anchored to the user's own words. The effect comes from the node. When they do not line up, it shows.
-
-Hosts that support MCP Apps (Claude Desktop, claude.ai) render this as a graphical panel. CLI agents (Claude Code, Codex) get the text above. Both carry the same content, in the language of the conversation (English, Simplified Chinese, Traditional Chinese).
+Both carry the same content, in the language of the conversation (English, Simplified Chinese, Traditional Chinese).
 
 ## The problem
 
@@ -117,25 +94,14 @@ That cell is getting more important. MetaMask Advanced Permissions (ERC-7715) is
 
 ## How it works
 
-```
-① you say something   the agent restates it and calls preview_transaction.
-                      that restatement is unverified input
-         ↓
-② build               Moss builds the unsigned transaction.
-                      we assume that party can be wrong too
-         ↓
-③ simulate            debug_traceCall against Monad mainnet.
-                      nothing is written, no gas, no signature
-         ↓
-④ check and compare   coverage check (nothing dropped, duplicated, or invented)
-                      · five structural rules · real balance check · humanize
-         ↓
-⑤ you compare         the panel puts "what the agent says you asked for"
-                      next to "what happens on chain"
-         ↓
-⑥ you decide          the panel hands off straight to the signing page, never
-                      back through the agent. Same fingerprint on both pages,
-                      and the wallet checks the account
+```mermaid
+flowchart LR
+    A["You say something"] --> B["Agent restates it and calls preview_transaction<br/>(that restatement is unverified input)"]
+    B --> C["Moss builds the unsigned transaction<br/>(we assume that party can be wrong too)"]
+    C --> D["debug_traceCall against Monad mainnet<br/>(nothing is written, no gas, no signature)"]
+    D --> E["Coverage check + five structural rules + real balance check"]
+    E --> F["The panel puts 'what the agent says you asked for'<br/>next to 'what happens on chain'"]
+    F --> G["You compare — then sign in your own wallet,<br/>never routed back through the agent"]
 ```
 
 Step ⑤ is a person's job, not the machine's. **Step ④ compares the transaction against the operation the agent called, not against the sentence the user said.** Those are different claims, and only the first one is machine-checkable — see [Two layers](#two-layers-of-comparison) below.
@@ -179,21 +145,31 @@ The signing page also compares the wallet's current account against the sender o
 
 **Both the stated intent and the account are unverified input from the agent.** The label reads "what the agent says you asked for", not "what you asked for". The account line says the address came from the agent and we did not verify it.
 
+## Run it
+
+```bash
+cd app
+pnpm install          # builds the vendored Moss, no external checkout needed
+pnpm check            # typecheck + 336 tests
+pnpm demo             # the panel in your terminal, no host required
+pnpm demo injection   # the injected-instruction case
+pnpm build:all        # panel, signing page, preview page, MCP server
+```
+
+**The default simulation account holds 0.001 MON on mainnet.** It cannot pay for any transaction, so the staking case shows "not enough balance, cannot sign". That is correct, not broken. We check the real balance and ignore the number the simulator writes over it. To see the passing case: `DEMO_ACCOUNT=0x… pnpm demo`.
+
+Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md) (Traditional Chinese).
+
 ## Status
 
 | Item | State |
 |---|---|
-| Data contract + 7 scenario fixtures | done |
-| Panel rendering (pure functions, testable) | done |
-| Humanize layer | done |
-| Real simulation pipeline | done, runs against Monad mainnet |
-| Structural comparison (5 rules) | done |
-| Real balance check | done |
-| MCP server + UI resource | done, renders as MCP Apps panel (Claude Desktop, claude.ai) and ANSI text for CLI hosts |
-| Text panel (for CLI hosts) | done |
-| Signing handoff to wallet | done; all three paths exercised in a browser against a real funded address: the normal path shows the same fingerprint as the panel, the reuse-old-fingerprint tamper is rejected, and the recompute-the-fingerprint attacker passes the automatic check by design and is caught by human comparison (`pnpm handoff-url --tamper-recompute`). End to end (wallet popup → explorer) verified on mainnet 2026-08-07 |
+| Data contract, scenario fixtures, panel rendering (pure functions), humanize layer | done |
+| Real simulation pipeline (debug_traceCall on mainnet), five structural rules, real balance check | done |
+| MCP server with UI resource: MCP Apps panel (Claude Desktop, claude.ai) + ANSI text for CLI hosts | done |
+| Signing handoff to wallet — fingerprint on both pages, tamper paths tested in a browser, end to end verified on mainnet 2026-08-07 | done |
 | Wallet connect (so the account stops coming from the agent) | not started |
-| Deployment to a hosted endpoint | site live at [vigilapp.vercel.app](https://vigilapp.vercel.app); MCP server runs locally behind a tunnel, hosted deployment pending |
+| Hosted deployment — site live at [vigilapp.vercel.app](https://vigilapp.vercel.app); MCP server runs locally behind a tunnel, hosted deployment pending | partial |
 
 `pnpm check`: **336 tests**, including live runs against Monad mainnet.
 
@@ -211,21 +187,6 @@ Details, decision log, and risks are tracked in our internal docs (Traditional C
 Live against `rpc.monad.xyz`: `debug_traceCall` works, chain ID 143, CORS open to any origin. The trace also confirmed that the shMONAD proxy points at the implementation address hard-coded in the source.
 
 Monad mainnet supports EIP-7702: a transaction carrying one authorization costs 25,382 gas more than the control, matching the 25,000 per authorization the spec defines.
-
-## Run it
-
-```bash
-cd app
-pnpm install          # builds the vendored Moss, no external checkout needed
-pnpm check            # typecheck + 336 tests
-pnpm demo             # the panel in your terminal, no host required
-pnpm demo injection   # the injected-instruction case
-pnpm build:all        # panel, signing page, preview page, MCP server
-```
-
-**The default simulation account holds 0.001 MON on mainnet.** It cannot pay for any transaction, so the staking case shows "not enough balance, cannot sign". That is correct, not broken. We check the real balance and ignore the number the simulator writes over it. To see the passing case: `DEMO_ACCOUNT=0x… pnpm demo`.
-
-Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md) (Traditional Chinese).
 
 ## What it is built on
 
