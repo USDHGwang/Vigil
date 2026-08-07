@@ -22,54 +22,66 @@ The evidence comes from simulating the transaction on a Monad node. The agent th
 
 ## What it looks like
 
-A normal stake:
+A normal stake, simulated live against Monad mainnet:
 
 ```
-Vigil · 簽名前檢查 · 證據來自 Monad 主網模擬，不是來自準備這筆交易的程式
+Vigil · Pre-sign check · Evidence comes from simulating on Monad mainnet, not from whatever prepared this transaction
 ──────────────────────────────────────────────────────────────────────────
-agent 說你要求的
-  幫我質押 10 MON
-  amount    10
-  receiver  你自己
+What the agent says you asked for
+  Stake 0.25 MON for me
+  amount    0.25
+  receiver  yourself
 
-✓  沒有發現意料外的動作
+✓  No unexpected actions found
 
-鏈上會發生的
-  支出    你支出 10 MON
-  取得    你取得 9.87 shMON（新鑄出的）
-  事件    協議記錄這筆質押：10 MON 換 9.87 shMON
+What happens on-chain
+  spend    You spend 0.25 MON
+  receive  You receive ~0.156170 shMON (newly minted)
+  event    Protocol records this stake: 0.25 MON → ~0.156170 shMON
 ──────────────────────────────────────────────────────────────────────────
-機器只驗了交易與這個操作相符。你說的話對不對得上，要你自己看上面兩段。
-要簽的話，簽名在你自己的錢包裡完成，這個工具碰不到你的私鑰。
+The machine only verified that the transaction matches this operation.
+Whether it matches what you actually said is for you to check against the
+two sections above.
+The “you” above refers to 0x08299d24…9051ecc0. This address was supplied
+by the agent and was not verified; at signing time the wallet compares it
+and refuses if it doesn't match.
+If you sign, the signing happens in your own wallet — this tool never touches your private key.
 ```
 
 The panel has two blocks. The first is what the agent claims you asked for. The second is what the node says will happen on chain. The `✓` means the machine found no operation it did not expect.
 
-Same request, but the agent was given an injected instruction:
+Same conversation, but an injected instruction steered the agent: the user asked to check a balance, the agent built an unlimited approval instead. The panel does not hide either side:
 
 ```
-agent 說你要求的
-  幫我質押 10 MON
+Vigil · Pre-sign check · Evidence comes from simulating on Monad mainnet, not from whatever prepared this transaction
+──────────────────────────────────────────────────────────────────────────
+What the agent says you asked for
+  Check my shMON balance
+  token    0x1B68…E19c
+  spender  0x9F2c…a41b
+  amount   unlimited
 
-══════════════════════════════════════════════════════════════════════════
-✗  交易內容跟這個操作對不上
-   · 沒有任何 MON 被質押
-   · 多出一筆無上限授權給 0x9F2c…a41b，你要求的操作不需要授權
-══════════════════════════════════════════════════════════════════════════
+!  Something needs your review
+   This transaction gives 0x9F2c…a41b unlimited access — not just this
+      time; it can move this token's balance from now on. Confirm you really
+      want this.
 
-鏈上會發生的
-  授權    授權 0x9F2c…a41b 動用你的 USDC，沒有上限
+What happens on-chain
+  approve  Approve 0x9F2c…a41b to move your shMON, with no limit
+──────────────────────────────────────────────────────────────────────────
+The machine only verified that the transaction matches this operation.
+Whether it matches what you actually said is for you to check against the
+two sections above.
+The “you” above refers to 0x08299d24…9051ecc0. This address was supplied
+by the agent and was not verified; at signing time the wallet compares it
+and refuses if it doesn't match.
 ```
 
-The `✗` block lists two conflicts: no MON was staked, and an unlimited token approval to an address the request never mentioned. The transaction is marked not signable.
+The `!` block is the machine flagging an unlimited approval, and the request and the effect are side by side for the person to compare. When the structure itself contradicts the operation (for example a staking request that approves a stranger instead), the panel shows `✗` and the transaction is not signable.
 
 **No LLM makes that call.** The intent is anchored to the user's own words. The effect comes from the node. When they do not line up, it shows.
 
-Hosts that support MCP Apps (Claude Desktop, claude.ai) render this as a graphical panel. CLI agents (Claude Code, Codex) get the text above. Both carry the same content.
-
-> [!NOTE]
-> The panel currently renders in Traditional Chinese. English is not done yet.
-> See [Limitations](#limitations).
+Hosts that support MCP Apps (Claude Desktop, claude.ai) render this as a graphical panel. CLI agents (Claude Code, Codex) get the text above. Both carry the same content, in the language of the conversation (English, Simplified Chinese, Traditional Chinese).
 
 ## The problem
 
@@ -177,20 +189,20 @@ The signing page also compares the wallet's current account against the sender o
 | Real simulation pipeline | done, runs against Monad mainnet |
 | Structural comparison (5 rules) | done |
 | Real balance check | done |
-| MCP server + UI resource | done, renders in Claude Desktop |
+| MCP server + UI resource | done, renders as MCP Apps panel (Claude Desktop, claude.ai) and ANSI text for CLI hosts |
 | Text panel (for CLI hosts) | done |
-| Signing handoff to wallet | done; all three paths exercised in a browser against a real funded address: the normal path shows the same fingerprint as the panel, the reuse-old-fingerprint tamper is rejected, and the recompute-the-fingerprint attacker passes the automatic check by design and is caught by human comparison (`pnpm handoff-url --tamper-recompute`). The wallet prompt itself is still unverified |
+| Signing handoff to wallet | done; all three paths exercised in a browser against a real funded address: the normal path shows the same fingerprint as the panel, the reuse-old-fingerprint tamper is rejected, and the recompute-the-fingerprint attacker passes the automatic check by design and is caught by human comparison (`pnpm handoff-url --tamper-recompute`). End to end (wallet popup → explorer) verified on mainnet 2026-08-07 |
 | Wallet connect (so the account stops coming from the agent) | not started |
-| Deployment to a hosted endpoint | not started, local setup is complete |
+| Deployment to a hosted endpoint | site live at [vigilapp.vercel.app](https://vigilapp.vercel.app); MCP server runs locally behind a tunnel, hosted deployment pending |
 
-`pnpm check`: **276 tests**, including live runs against Monad mainnet.
+`pnpm check`: **336 tests**, including live runs against Monad mainnet.
 
 ### Limitations
 
-- **The interface is Traditional Chinese only.** Around 84 strings. English is not done.
+- **The interface is in three languages** — English, Simplified Chinese, Traditional Chinese — and follows the language of the conversation.
 - **The account is supplied by the agent and is not verified.** The panel says so, and the signing page checks it against the wallet. Wallet connect would fix it at the source.
 - **The signing page sends the first transaction only.** It says so when a batch has more. The staking demo is a single transaction, so the demo is unaffected.
-- **The wallet leg has not been tested end to end.** `eth_requestAccounts` through `eth_sendTransaction` needs a browser with a real wallet, which the dev environment does not have.
+- **The wallet leg is verified end to end** on mainnet (2026-08-07): `eth_requestAccounts` through `eth_sendTransaction`, wallet popup to explorer link.
 
 Details, decision log, and risks are tracked in our internal docs (Traditional Chinese).
 
@@ -205,7 +217,7 @@ Monad mainnet supports EIP-7702: a transaction carrying one authorization costs 
 ```bash
 cd app
 pnpm install          # builds the vendored Moss, no external checkout needed
-pnpm check            # typecheck + 276 tests
+pnpm check            # typecheck + 336 tests
 pnpm demo             # the panel in your terminal, no host required
 pnpm demo injection   # the injected-instruction case
 pnpm build:all        # panel, signing page, preview page, MCP server

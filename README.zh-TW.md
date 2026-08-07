@@ -177,13 +177,13 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | 真實模擬管線 | 完成，對 Monad 主網實跑 |
 | 結構層比對（五條規則） | 完成 |
 | 真實餘額檢查 | 完成 |
-| MCP server + UI resource | 完成，已在 Claude Desktop 渲染成功 |
+| MCP server + UI resource | 完成，MCP Apps 面板（Claude Desktop、claude.ai）與 CLI host 的 ANSI 文字都渲染成功 |
 | 文字面板（CLI host 用） | 完成 |
-| 簽名交回錢包 | 完成。三條路都用真實地址在瀏覽器實測：正常路指紋與面板同一串、「沿用舊指紋」被擋、「連指紋一起重算」照設計是人工比對擋不是自動擋（`pnpm handoff-url --tamper-recompute`）。錢包彈窗那一段還沒實機驗 |
+| 簽名交回錢包 | 完成。三條路都用真實地址在瀏覽器實測：正常路指紋與面板同一串、「沿用舊指紋」被擋、「連指紋一起重算」照設計是人工比對擋不是自動擋（`pnpm handoff-url --tamper-recompute`）。端到端（錢包彈窗 → explorer）已於 2026-08-07 主網實送驗證 |
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
-| 部署到雲端 endpoint | 未開始，本機已完整可用 |
+| 部署到雲端 endpoint | site 已上線 [vigilapp.vercel.app](https://vigilapp.vercel.app)；MCP server 目前跑本機 + 隧道，正式部署待辦 |
 
-`pnpm check`：**276 tests**，含對 Monad 主網的實跑。詳細狀態、決定紀錄、風險維護在內部文件。
+`pnpm check`：**336 tests**，含對 Monad 主網的實跑。詳細狀態、決定紀錄、風險維護在內部文件。
 
 ### 自己驗過的（非文件轉述）
 
@@ -196,7 +196,7 @@ Monad 主網支援 EIP-7702：帶 authorization 的交易 gas 比對照組多 25
 ```bash
 cd app
 pnpm install          # 會自動建 vendor 裡的 Moss，不需要外部 checkout
-pnpm check            # typecheck + 276 tests
+pnpm check            # typecheck + 336 tests
 pnpm demo             # 終端機直接看面板，不需要任何 host
 pnpm demo injection   # 看被注入指令的那一幕
 pnpm build:all        # 面板、簽名頁、預覽頁、MCP server
