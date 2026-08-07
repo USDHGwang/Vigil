@@ -7,7 +7,7 @@
  * 最細的半透明白框 + 頂端一線內光。滾動後才把「玻璃」從透明喚醒，
  * 保持首屏乾淨。active 段落在 nav 標示。
  *
- * 「Add」按鈕背後邏輯留空，只做視覺。
+ * 「Add」按鈕指到安裝分頁 /add（host 設定引導 + 可複製片段）。
  */
 
 import { useEffect, useState } from "react";
@@ -17,9 +17,10 @@ import Logo from "@/components/Logo";
 export default function Nav() {
   const t = useTranslation();
   const links = [
-    { href: "#gap", label: t.navGap },
-    { href: "#how", label: t.navHow },
-    { href: "#evidence", label: t.navEvidence },
+    { href: "/#gap", label: t.navGap },
+    { href: "/#how", label: t.navHow },
+    { href: "/#evidence", label: t.navEvidence },
+    { href: "/docs", label: t.navDocs },
   ];
   const [scrolled, setScrolled] = useState(false);
 
@@ -47,7 +48,7 @@ export default function Nav() {
             : "none",
         }}
       >
-        <a href="#top" className="group flex items-center gap-2.5">
+        <a href="/" className="group flex items-center gap-2.5">
           <Logo className="h-7 w-auto shrink-0 text-[var(--color-ink)] transition duration-300 group-hover:text-white" />
           <span className="tracking-[-0.02em] text-[15px] font-medium text-[var(--color-ink)] transition duration-300 group-hover:text-white">
             Vigil
@@ -68,9 +69,9 @@ export default function Nav() {
 
         <div className="flex items-center gap-2">
           <LocaleToggle />
-          {/* 玻璃按鈕：外框透白 + hover 填充 */}
+          {/* 玻璃按鈕：外框透白 + hover 填充。指到安裝分頁 /add */}
           <a
-            href="#how"
+            href="/add"
             className="group relative overflow-hidden rounded-full border border-[rgba(255,255,255,0.18)] px-4 py-1.5 text-[13.5px] font-medium text-[var(--color-ink)] transition hover:border-[var(--color-accent)] hover:text-white"
           >
             {/* hover 光暈 */}

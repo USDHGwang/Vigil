@@ -22,7 +22,8 @@ Thumbs.db
 *.zip
 
 # 內部文件：只留本地，禁止進 repo（2026-08-06 歷史淨化後）
-docs/
+# 前導斜線限定根目錄——不要擋 site/src/app/docs/（公開文件頁）
+/docs/
 2026-07-28-handoff.md
 2026-07-28-problem.md
 2026-07-31-plan.md
@@ -35,3 +36,5 @@ check_pages.py
 dispatch_pages.py
 tunnel_launcher.py
 tunnel_url.txt
+.vercel
+.env*

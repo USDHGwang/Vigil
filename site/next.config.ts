@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   // 靜態匯出：產出純 HTML/CSS/JS 資料夾，可丟到任何靜態 hosting（GitHub Pages / Vercel / Netlify）
   output: "export",
   images: { unoptimized: true },
+  // 本機 review 用：允許 cloudflared quick tunnel 來源載入 dev 資源（生產 build 不受影響）
+  allowedDevOrigins: ["*.trycloudflare.com"],
   ...(basePath === "" ? {} : { basePath, assetPrefix: basePath }),
   // 子路徑託管時路徑要有結尾斜線，不然 /sign 會被導去別的地方
   trailingSlash: true,

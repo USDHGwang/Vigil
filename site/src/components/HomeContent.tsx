@@ -67,7 +67,7 @@ export default function HomeContent() {
             </Reveal>
             <Reveal delay={500}>
               <div className="mt-10 flex flex-wrap items-center gap-3">
-                <Button href="#how" size="lg" arrow>
+                <Button href="/add" size="lg" arrow>
                   {t.ctaAdd}
                 </Button>
                 <Button href="#how" size="lg" variant="glass">
@@ -178,7 +178,7 @@ export default function HomeContent() {
             </Reveal>
             <Reveal delay={120}>
               <div className="mt-10 flex flex-wrap items-center gap-3">
-                <Button href="#how" size="lg" arrow>
+                <Button href="/add" size="lg" arrow>
                   {t.ctaAdd}
                 </Button>
               </div>

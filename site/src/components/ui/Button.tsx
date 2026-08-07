@@ -102,8 +102,17 @@ export default function Button({
   const body = <span style={contentStyle}>{content}</span>;
 
   if (href) {
+    // 外部連結（http/https）開新分頁，不離開 landing
+    const external = /^https?:/.test(href);
     return (
-      <a ref={ref} href={href} onClick={onClick} className={cls} style={baseStyle}>
+      <a
+        ref={ref}
+        href={href}
+        onClick={onClick}
+        className={cls}
+        style={baseStyle}
+        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
         {body}
       </a>
     );
