@@ -96,12 +96,12 @@ That cell is getting more important. MetaMask Advanced Permissions (ERC-7715) is
 
 ```mermaid
 flowchart LR
-    A["You say something"] --> B["Agent restates it and calls preview_transaction<br/>(that restatement is unverified input)"]
-    B --> C["Moss builds the unsigned transaction<br/>(we assume that party can be wrong too)"]
-    C --> D["debug_traceCall against Monad mainnet<br/>(nothing is written, no gas, no signature)"]
+    A["You say something"] --> B["Agent restates it and calls preview_transaction"]
+    B --> C["Moss builds the unsigned transaction"]
+    C --> D["debug_traceCall against Monad mainnet"]
     D --> E["Coverage check + five structural rules + real balance check"]
-    E --> F["The panel puts 'what the agent says you asked for'<br/>next to 'what happens on chain'"]
-    F --> G["You compare — then sign in your own wallet,<br/>never routed back through the agent"]
+    E --> F["Panel: what the agent says you asked for, next to what happens on-chain"]
+    F --> G["You compare — then sign in your own wallet"]
 ```
 
 Step ⑤ is a person's job, not the machine's. **Step ④ compares the transaction against the operation the agent called, not against the sentence the user said.** Those are different claims, and only the first one is machine-checkable — see [Two layers](#two-layers-of-comparison) below.
