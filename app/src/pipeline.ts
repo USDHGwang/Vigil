@@ -38,6 +38,7 @@ import type {
   Warning,
 } from "./contract.js";
 import { fingerprintOf, MONAD_CHAIN_ID } from "./handoff.js";
+import { isLocale, t, type Locale } from "./panel/i18n.js";
 
 /** 授權事件的 topic0，用簽章現算，不手抄常數。 */
 const APPROVAL_TOPIC = toEventSelector("Approval(address,address,uint256)");
@@ -77,6 +78,8 @@ export interface SimulateRequest {
   params: Record<string, unknown>;
   /** agent 宣稱使用者要求什麼。未經驗證的輸入。 */
   statedRequest: string;
+  /** 面板文案語言。agent 從對話語言決定；預設 en。 */
+  locale?: Locale;
 }
 
 let cached: Awaited<ReturnType<typeof buildStack>> | undefined;
@@ -333,6 +336,7 @@ export function structuralVerdict(
   request: SimulateRequest,
   receipt: Receipt | null,
   changes: readonly Change[],
+  locale: Locale,
 ): Verdict {
   const conflicts: string[] = [];
   const known = addressesInIntent(request);
@@ -349,16 +353,23 @@ export function structuralVerdict(
     const who = shortWho(approval.spender);
     conflicts.push(
       approval.kind === "erc721"
-        ? `多出一筆 NFT 授權：${who} 可以轉走你在 ${shortWho(approval.token)} 的編號 ${approval.value} 這一顆，它不是這個操作指定的對象`
+        ? t(locale, "conflict_nft_approval", {
+            who,
+            token: shortWho(approval.token),
+            id: String(approval.value),
+          })
         : approval.unlimited
-          ? `多出一筆無上限授權給 ${who}，它不是這個操作指定的對象`
-          : `多出一筆授權給 ${who}，它不是這個操作指定的對象`,
+          ? t(locale, "conflict_unlimited_approval", { who })
+          : t(locale, "conflict_approval", { who }),
     );
   }
   for (const grant of grants) {
     if (known.has(grant.operator.toLowerCase())) continue;
     conflicts.push(
-      `多出一筆整批授權：${shortWho(grant.operator)} 可以轉走你在 ${shortWho(grant.collection)} 這個系列裡的每一個，它不是這個操作指定的對象`,
+      t(locale, "conflict_batch_grant", {
+        who: shortWho(grant.operator),
+        collection: shortWho(grant.collection),
+      }),
     );
   }
 
@@ -370,7 +381,7 @@ export function structuralVerdict(
       operation !== request.method &&
       !(OPERATION_SYNONYMS[request.method] ?? []).includes(operation)
     ) {
-      conflicts.push(`實際執行的是 ${operation}，你要求的是 ${request.method}`);
+      conflicts.push(t(locale, "conflict_operation", { actual: operation, requested: request.method }));
     }
   }
 
@@ -383,7 +394,7 @@ export function structuralVerdict(
     const what = [...new Set(grants.map((g) => shortWho(g.collection)))].join("、");
     return {
       kind: "partial",
-      reason: `這筆交易讓 ${who} 可以轉走你在 ${what} 這個系列裡的每一個，包含你以後才拿到的，而且沒有數量上限。確認你真的要這樣做。`,
+      reason: t(locale, "reason_batch_grant", { who, what }),
     };
   }
 
@@ -394,14 +405,14 @@ export function structuralVerdict(
     const who = unlimited.map((a) => shortWho(a.spender)).join("、");
     return {
       kind: "partial",
-      reason: `這筆交易給 ${who} 無上限的動用權，不只這一次，往後你這個代幣的餘額它都動得了。確認你真的要這樣做。`,
+      reason: t(locale, "reason_unlimited", { who }),
     };
   }
 
   if (receipt === null) {
     return {
       kind: "partial",
-      reason: "這個協議沒有解讀模組，只能顯示未經解讀的原始變動，無法做結構比對",
+      reason: t(locale, "reason_no_module"),
     };
   }
   return { kind: "match" };
@@ -501,14 +512,14 @@ async function estimateGasWithoutOverrides(
  * 估不到手續費等於這個檢查沒做。照設計 brief 的第五種狀態處理——
  * 「我們沒能驗證。不是通過，也不是有危險」，所以擋簽名但把已知的部分講出來。
  */
-export function feeUnknownWarning(balance: bigint, value: bigint): Warning {
+export function feeUnknownWarning(balance: bigint, value: bigint, locale: Locale = "en"): Warning {
   const mon = (wei: bigint): string => formatAmount(wei.toString(), 18);
   return {
     code: "FEE_ESTIMATE_UNAVAILABLE",
-    message:
-      `手續費估不出來，所以沒辦法確認這筆付不付得起。` +
-      `本金是 ${mon(value)} MON，你有 ${mon(balance)} MON，但手續費要另外加。` +
-      `這是檢查沒做完，不是這筆交易有問題。`,
+    message: t(locale, "warn_fee_unknown", {
+      value: mon(value),
+      balance: mon(balance),
+    }),
   };
 }
 
@@ -516,15 +527,17 @@ export function feeUnknownWarning(balance: bigint, value: bigint): Warning {
  * 金額走 formatAmount 而不是 formatEther：後者會吐 18 位小數，人讀不了，
  * 也會撞到「畫面上不准出現未格式化長整數」那條回歸測試。顯示規則全專案一套。
  */
-export function affordabilityWarning(a: Affordability): Warning | null {
+export function affordabilityWarning(a: Affordability, locale: Locale = "en"): Warning | null {
   if (a.short === 0n) return null;
   const mon = (wei: bigint): string => formatAmount(wei.toString(), 18);
   return {
     code: "INSUFFICIENT_BALANCE",
-    message:
-      `餘額不夠。你有 ${mon(a.balance)} MON，這筆需要 ${mon(a.needed)} MON` +
-      `（其中約 ${mon(a.fee)} MON 是手續費），差 ${mon(a.short)} MON。` +
-      `照這樣送出去會失敗，手續費照樣扣。`,
+    message: t(locale, "warn_insufficient", {
+      have: mon(a.balance),
+      need: mon(a.needed),
+      fee: mon(a.fee),
+      short: mon(a.short),
+    }),
   };
 }
 
@@ -536,13 +549,12 @@ export function affordabilityWarning(a: Affordability): Warning | null {
  */
 export function multiTransactionWarning(
   transactions: readonly UnsignedTx[],
+  locale: Locale = "en",
 ): Warning | null {
   if (transactions.length <= 1) return null;
   return {
     code: "MULTI_TX_UNSUPPORTED",
-    message:
-      `這個操作要 ${transactions.length} 筆交易才完成，目前簽名頁一次只送得出第一筆，` +
-      `簽出去的會跟面板驗過的整包不一致，所以這批先不開放簽名。`,
+    message: t(locale, "warn_multi_tx", { n: String(transactions.length) }),
   };
 }
 
@@ -555,13 +567,33 @@ export interface PipelineResult {
 export async function previewTransaction(request: SimulateRequest): Promise<PipelineResult> {
   const { registry, simulator, runtime } = await getStack();
 
+  const params = { ...request.params };
+  // receiver 省略時視為質押給自己（= 發送帳戶）。質押給自己是
+  // 最常見的形態，agent 不該被「不知道 receiver 填什麼」卡住——
+  // 使用者說「幫我質押 0.25 MON」時本來就沒指定收款人。
+  // 只補「該 method 的 schema 真的收 receiver」的情況：erc20.transfer 這類
+  // 不收 receiver 的方法硬塞進去會變成 Unrecognized key，整筆直接爆掉。
+  // to/token 缺了是真正的錯誤，不補。
+  if (params.receiver === undefined) {
+    const stub = registry
+      .load(
+        registry
+          .discover()
+          .filter((c) => c.protocol === request.protocol && c.method === request.method),
+      )
+      .find((s) => s.protocol === request.protocol && s.method === request.method);
+    if (stub !== undefined && "receiver" in stub.params) {
+      params.receiver = request.account;
+    }
+  }
+
   const intent: StatedIntent = {
     source: "agent",
     protocol: request.protocol,
     method: request.method,
-    params: Object.fromEntries(
-      Object.entries(request.params).map(([k, v]) => [k, String(v)]),
-    ),
+    // 用補完後的 params：receiver 被補成發送帳戶時，面板顯示的
+    // 「agent 說你要求的」也要跟實際送進模擬的一致。
+    params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])),
     text: request.statedRequest,
   };
 
@@ -569,10 +601,17 @@ export async function previewTransaction(request: SimulateRequest): Promise<Pipe
     request.protocol,
     request.method,
     request.account,
-    request.params,
+    params,
   );
   if (action.kind !== "capability") {
-    throw new Error(`${request.protocol}.${request.method} 是 Query 不是 Capability，沒有交易可以模擬`);
+    // agent 會把 discover 濾掉的 query 方法名直接傳進來（例如「讀餘額」），
+    // 錯誤訊息要講清楚這是什麼狀況，語言跟面板一致。
+    throw new Error(
+      t(request.locale ?? "en", "err_query_no_tx", {
+        protocol: request.protocol,
+        method: request.method,
+      }),
+    );
   }
 
   const outcome = await simulator.simulate(action);
@@ -601,11 +640,12 @@ export async function previewTransaction(request: SimulateRequest): Promise<Pipe
     (await estimateGasWithoutOverrides(runtime.client, transactions));
 
   const value = transactions.reduce((sum, tx) => sum + BigInt(tx.value), 0n);
+  const locale = request.locale ?? "en";
   const affordabilityCheck =
     gasUnits === null
-      ? feeUnknownWarning(balance, value)
-      : affordabilityWarning(affordability(balance, transactions, gasUnits, gasPrice));
-  const multiTx = multiTransactionWarning(transactions);
+      ? feeUnknownWarning(balance, value, locale)
+      : affordabilityWarning(affordability(balance, transactions, gasUnits, gasPrice), locale);
+  const multiTx = multiTransactionWarning(transactions, locale);
 
   const blocking: Warning[] = [
     ...warnings,
@@ -617,7 +657,7 @@ export async function previewTransaction(request: SimulateRequest): Promise<Pipe
     const all: Warning[] =
       blocking.length > 0
         ? blocking
-        : [{ code: "TRACE_FAILED", message: outcome.halted?.reason ?? "模擬中止" }];
+        : [{ code: "TRACE_FAILED", message: outcome.halted?.reason ?? t(locale, "trace_failed") }];
     return {
       view: {
         intent,
@@ -630,16 +670,19 @@ export async function previewTransaction(request: SimulateRequest): Promise<Pipe
         verdict: { kind: "blocked", warnings: all },
         signable: false,
         account: request.account,
+        locale: request.locale ?? "en",
         accountSource: "agent",
         tokens: await readTokens(changes),
         transactions,
         fingerprint,
       },
-      summary: `模擬未通過，不可簽名：${all.map((w) => w.message).join("; ")}`,
+      summary: t(locale, "summary_blocked", {
+        reasons: all.map((w) => w.message).join("; "),
+      }),
     };
   }
 
-  const verdict = structuralVerdict(request, receipt, changes);
+  const verdict = structuralVerdict(request, receipt, changes, locale);
 
   return {
     view: {
@@ -650,6 +693,7 @@ export async function previewTransaction(request: SimulateRequest): Promise<Pipe
       verdict,
       signable: verdict.kind !== "mismatch",
       account: request.account,
+      locale: request.locale ?? "en",
       accountSource: "agent",
       tokens: await readTokens(changes),
       transactions,

@@ -8,6 +8,8 @@
 
 import type { EvidencePanelView } from "../contract.js";
 import { renderBody, renderFooter, type Tab } from "./render.js";
+import { t } from "./i18n.js";
+import { LOGOMARK_SVG } from "./brand.js";
 
 interface Scenario {
   label: string;
@@ -64,13 +66,13 @@ function paint(): void {
 
     <div class="panel">
       <div class="p-head">
-        <span class="mark">證</span>
-        <span class="name">Vigil · 簽名前檢查</span>
-        <span class="src"><span class="live"></span>Monad 主網模擬</span>
+        <span class="mark">${LOGOMARK_SVG}</span>
+        <span class="name">${t(view.locale ?? "zh-TW", "panel_name")}</span>
+        <span class="src"><span class="live"></span>${t(view.locale ?? "zh-TW", "panel_source")}</span>
       </div>
       <div class="tabs" role="tablist">
-        <button role="tab" data-tab="summary" aria-selected="${state.tab === "summary"}">結論</button>
-        <button role="tab" data-tab="raw" aria-selected="${state.tab === "raw"}">原始資料</button>
+        <button role="tab" data-tab="summary" aria-selected="${state.tab === "summary"}">${t(view.locale ?? "zh-TW", "tab_summary")}</button>
+        <button role="tab" data-tab="raw" aria-selected="${state.tab === "raw"}">${t(view.locale ?? "zh-TW", "tab_raw")}</button>
       </div>
       <div class="p-body">${renderBody(view, { tab: state.tab, openSource: state.openSource })}</div>
       <div class="p-foot">${renderFooter(view)}</div>

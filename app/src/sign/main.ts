@@ -14,6 +14,7 @@
  */
 
 import { decodeHandoff, type HandoffPayload, MONAD_CHAIN_ID } from "../handoff.js";
+import { t, type Locale } from "../panel/i18n.js";
 import {
   accountMatches,
   canAutoStart,
@@ -49,7 +50,9 @@ let generation = 0;
 
 function paint(phase: Phase, at: number = generation): void {
   if (root === null || at !== generation || payload === undefined) return;
-  root.innerHTML = renderCard(payload, phase);
+  const locale: Locale = payload.locale ?? "zh-TW";
+  document.title = t(locale, "sign_title");
+  root.innerHTML = renderCard(payload, phase, locale);
   document.getElementById("go")?.addEventListener("click", () => void send());
 }
 
@@ -86,7 +89,7 @@ async function send(): Promise<void> {
     // 連完再比一次。使用者可能剛剛才在錢包裡切了帳戶，或這一頁是舊的交接。
     const expected = current.transactions[0]?.from ?? "";
     if (!accountMatches(current, accounts)) {
-      paint({ kind: "wrongAccount", connected: accounts[0] ?? "（沒有）", expected }, at);
+      paint({ kind: "wrongAccount", connected: accounts[0] ?? t(current.locale ?? "zh-TW", "sign_none"), expected }, at);
       return;
     }
 
@@ -140,7 +143,7 @@ async function boot(at: number): Promise<void> {
     paint(
       {
         kind: "wrongAccount",
-        connected: accounts[0] ?? "（沒有）",
+        connected: accounts[0] ?? t(payload.locale ?? "zh-TW", "sign_none"),
         expected: payload.transactions[0]?.from ?? "",
       },
       at,

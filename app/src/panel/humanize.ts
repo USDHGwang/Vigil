@@ -11,6 +11,7 @@
 
 import { formatUnits } from "viem";
 import type { Change, TokenMap } from "../contract.js";
+import { t, type Locale } from "./i18n.js";
 
 export type Direction = "out" | "in" | "approval" | "pending" | "";
 
@@ -57,14 +58,14 @@ const ADDRESS_EXACT = /^0x[0-9a-fA-F]{40}$/;
  * 授權額度常常是 2^256-1，那是 78 位數，直接印出來是雜訊而且看不出意思。
  * 地址也一樣要縮短。其他值原樣顯示。
  */
-export function displayParamValue(value: string, account?: string): string {
+export function displayParamValue(value: string, account?: string, locale: Locale = "en"): string {
   if (ADDRESS_EXACT.test(value)) {
-    if (account !== undefined && value.toLowerCase() === account.toLowerCase()) return "你自己";
+    if (account !== undefined && value.toLowerCase() === account.toLowerCase()) return t(locale, "you_self");
     return shortAddress(value);
   }
   if (/^\d{16,}$/.test(value)) {
     try {
-      if (BigInt(value) >= EFFECTIVELY_UNLIMITED) return "無上限";
+      if (BigInt(value) >= EFFECTIVELY_UNLIMITED) return t(locale, "unlimited");
     } catch {
       // 不是數字就原樣顯示
     }
@@ -133,10 +134,10 @@ function token(tokens: TokenMap, address: unknown): TokenDisplay {
  * 那會把 250000000000000000 原封不動放上畫面，讀的人會以為那是 2.5 億個代幣，
  * 實際上是 0.25 個。寧可講「換算不了」也不要給一個看起來像數量的錯數字。
  */
-function amountWithSymbol(raw: unknown, info: TokenDisplay): string {
+function amountWithSymbol(raw: unknown, info: TokenDisplay, locale: Locale = "en"): string {
   const value = typeof raw === "string" ? raw : String(raw);
   if (!info.known) {
-    return `${shortNumber(value)} 個最小單位（查不到小數位，換算不了）`;
+    return t(locale, "min_units_unknown", { n: shortNumber(value) });
   }
   return `${formatAmount(value, info.decimals)} ${info.symbol}`;
 }
@@ -179,6 +180,7 @@ export function humanize(
   account: string,
   tokens: TokenMap,
   fallback: string,
+  locale: Locale = "en",
 ): Humanized {
   const safeFallback = { direction: "" as Direction, text: shortenAddressesIn(fallback) };
   if (data === null || typeof data !== "object" || Array.isArray(data)) return safeFallback;
@@ -189,32 +191,46 @@ export function humanize(
   if (operation === "nativeTransfer") {
     const amount = `${formatAmount(String(d.value ?? "0"), NATIVE_DECIMALS)} ${NATIVE_SYMBOL}`;
     if (sameAddress(d.from, account)) {
-      return { direction: "out", text: `你支出 ${amount}` };
+      return { direction: "out", text: t(locale, "you_spend", { amount }) };
     }
     if (sameAddress(d.to, account)) {
-      return { direction: "in", text: `你收到 ${amount}` };
+      return { direction: "in", text: t(locale, "you_receive", { amount }) };
     }
     return {
       direction: "",
-      text: `${shortAddress(str(d.from) ?? "?")} 轉 ${amount} 給 ${shortAddress(str(d.to) ?? "?")}`,
+      text: t(locale, "addr_transfer", {
+        from: shortAddress(str(d.from) ?? "?"),
+        amount,
+        to: shortAddress(str(d.to) ?? "?"),
+      }),
     };
   }
 
   if (operation === "transfer") {
     const info = token(tokens, d.token);
-    const amount = amountWithSymbol(d.amount, info);
+    const amount = amountWithSymbol(d.amount, info, locale);
     const minted = sameAddress(d.from, ZERO_ADDRESS);
     const burned = sameAddress(d.to, ZERO_ADDRESS);
 
     if (sameAddress(d.to, account)) {
-      return { direction: "in", text: minted ? `你取得 ${amount}（新鑄出的）` : `你收到 ${amount}` };
+      return {
+        direction: "in",
+        text: minted ? t(locale, "you_receive_minted", { amount }) : t(locale, "you_receive", { amount }),
+      };
     }
     if (sameAddress(d.from, account)) {
-      return { direction: "out", text: burned ? `你的 ${amount} 被銷毀` : `你支出 ${amount}` };
+      return {
+        direction: "out",
+        text: burned ? t(locale, "your_burned", { amount }) : t(locale, "you_spend", { amount }),
+      };
     }
     return {
       direction: "",
-      text: `${shortAddress(str(d.from) ?? "?")} 轉 ${amount} 給 ${shortAddress(str(d.to) ?? "?")}`,
+      text: t(locale, "addr_transfer", {
+        from: shortAddress(str(d.from) ?? "?"),
+        amount,
+        to: shortAddress(str(d.to) ?? "?"),
+      }),
     };
   }
 
@@ -228,12 +244,12 @@ export function humanize(
       unlimited = false;
     }
     const spender = shortAddress(str(d.spender) ?? "?");
-    const what = info.known ? info.symbol : "這個代幣";
+    const what = info.known ? info.symbol : t(locale, "token_unknown");
     return {
       direction: "approval",
       text: unlimited
-        ? `授權 ${spender} 動用你的 ${what}，沒有上限`
-        : `授權 ${spender} 動用 ${amountWithSymbol(raw, info)}`,
+        ? t(locale, "approve_unlimited", { spender, token: what })
+        : t(locale, "approve_amount", { spender, amount: amountWithSymbol(raw, info, locale) }),
     };
   }
 
@@ -246,8 +262,8 @@ export function humanize(
       direction: "approval",
       text:
         d.approved === true
-          ? `讓 ${operator} 可以轉走你在 ${collection} 這個系列裡的每一個，包含你以後才拿到的`
-          : `收回 ${operator} 對 ${collection} 這個系列的轉移權`,
+          ? t(locale, "approval_for_all_on", { operator, collection })
+          : t(locale, "approval_for_all_off", { operator, collection }),
     };
   }
 
@@ -255,21 +271,26 @@ export function humanize(
   // native transfer 與 token transfer 算過了，這裡再標成流入流出會變成重複計算，
   // 讀的人會以為拿到兩次。所以方向留白，讓它讀起來就是一筆紀錄。
   if (operation === "deposit") {
-    const assets = amountWithSymbol(d.assets ?? "0", vaultAsset(tokens, d));
+    const assets = amountWithSymbol(d.assets ?? "0", vaultAsset(tokens, d), locale);
     const shares = amountWithSymbol(
       d.shares,
       token(tokens, change.kind === "event" ? change.address : undefined),
+      locale,
     );
-    return { direction: "", text: `協議記錄這筆質押：${assets} 換 ${shares}` };
+    return { direction: "", text: t(locale, "deposit_recorded", { assets, shares }) };
   }
 
   if (operation === "withdraw") {
-    const assets = amountWithSymbol(d.assets ?? "0", vaultAsset(tokens, d));
+    const assets = amountWithSymbol(d.assets ?? "0", vaultAsset(tokens, d), locale);
     const shares = amountWithSymbol(
       d.shares,
       token(tokens, change.kind === "event" ? change.address : undefined),
+      locale,
     );
-    return { direction: "pending", text: `協議記錄這筆贖回：${shares} 換回 ${assets}，款項不在這筆交易裡到帳` };
+    return {
+      direction: "pending",
+      text: t(locale, "withdraw_recorded", { shares, assets }),
+    };
   }
 
   return safeFallback;

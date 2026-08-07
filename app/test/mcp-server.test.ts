@@ -8,10 +8,11 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { EvidencePanelView } from "../src/contract.js";
 import { assertViewInvariants } from "../src/contract.js";
-import { createServer, PANEL_RESOURCE_URI } from "../src/mcp/server.js";
+import { createServer, PANEL_RESOURCE_URI, resetRememberedAccounts } from "../src/mcp/server.js";
+import type { ServerOptions } from "../src/mcp/server.js";
 
 const SIGN_PAGE_URL = "http://127.0.0.1:65000/sign";
 
@@ -26,8 +27,22 @@ beforeAll(async () => {
 });
 
 async function previewTool(args: Record<string, unknown>) {
-  const result = await client.callTool({ name: "preview_transaction", arguments: args });
+  // 既有測試斷言的都是 zh-TW 文案，helper 統一帶 zh-TW；
+  // 測 locale 的測試自己傳 en/zh-CN 覆蓋。
+  const result = await client.callTool({
+    name: "preview_transaction",
+    arguments: { locale: "zh-TW", ...args },
+  });
   return result;
+}
+
+/** 用指定的 options 另開一對 in-memory server/client（beforeAll 那對是 stdio 模式） */
+async function connectServer(options: ServerOptions): Promise<Client> {
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const server = createServer(options);
+  const c = new Client({ name: "test", version: "0.0.0" });
+  await Promise.all([server.connect(serverTransport), c.connect(clientTransport)]);
+  return c;
 }
 
 describe("MCP App 協定面", () => {
@@ -96,6 +111,41 @@ describe("MCP App 協定面", () => {
     });
     expect(result.isError).toBe(true);
   });
+
+  it("無狀態模式：remember_account 回 supported:false，不寫共享記憶", async () => {
+    // HTTP 無狀態模式（http.ts）每個請求新建 server、沒有 session id，
+    // module 級 Map 是所有請求共用的——照寫的話任何人的 remember_account
+    // 都會污染之後所有人的 preview（無狀態請求沒有 session，key 全退到
+    // "stdio"）。stateless 的 server 必須完全不寫、明確回不支援。
+    const statelessClient = await connectServer({ signPageUrl: SIGN_PAGE_URL, stateless: true });
+    const result = await statelessClient.callTool({
+      name: "remember_account",
+      arguments: { address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", locale: "zh-TW" },
+    });
+    const structured = result.structuredContent as {
+      remembered: string | null;
+      session: string | null;
+      supported: boolean;
+    };
+    expect(structured).toEqual({ remembered: null, session: null, supported: false });
+    // 回覆要講清楚，agent 才知道改成在對話裡記住、每筆都帶 account
+    const text = JSON.stringify(result.content);
+    expect(text).toContain("無狀態 HTTP");
+  });
+
+  it("statedRequest 超過 2000 字元就在邊界擋下，不流進管線", async () => {
+    // 沒有長度上限的話，50KB 的引言原樣進 view 和 TUI 輸出，膨脹 agent context。
+    // 引言是「使用者要求什麼」，不是整個對話——超過 2000 字元就不是引言了。
+    const result = await previewTool({
+      statedRequest: "x".repeat(2001),
+      protocol: "shmonad",
+      method: "stake",
+      params: {},
+    });
+    expect(result.isError).toBe(true);
+    const text = JSON.stringify(result.content);
+    expect(text).toMatch(/too long/i);
+  });
 });
 
 describe("host 診斷", () => {
@@ -105,7 +155,7 @@ describe("host 診斷", () => {
   });
 
   it("回報 client 有沒有宣告 MCP Apps extension", async () => {
-    const result = await client.callTool({ name: "panel_host_info", arguments: {} });
+    const result = await client.callTool({ name: "panel_host_info", arguments: { locale: "zh-TW" } });
     const structured = result.structuredContent as {
       supportsMcpApps: boolean;
       declaredExtensions: string[];
@@ -115,7 +165,59 @@ describe("host 診斷", () => {
     expect(Array.isArray(structured.declaredExtensions)).toBe(true);
 
     const text = (result.content as { text: string }[])[0]?.text ?? "";
-    expect(text).toContain("支援 MCP Apps 渲染");
+    expect(text).toContain("會用文字版面板");
+  });
+});
+
+describe("工具回覆語言", () => {
+  // 資料工具的 locale 預設是 en（agent 沒傳時），跟 preview_transaction 同一套。
+  // demo 是英文環境：agent 不傳 locale 也要全英文，不能混到開發用的中文。
+  //
+  // remember_account 成功分支會寫 module 級 session 記憶（in-memory transport
+  // 沒有 session id，key 退到 "stdio"），不清掉會污染後面的 stateless 測試
+  // （它們預期「沒有記憶」）。測完清乾淨。
+  afterEach(() => {
+    resetRememberedAccounts();
+  });
+  it("remember_account 不傳 locale 回英文（成功分支）", async () => {
+    const result = await client.callTool({
+      name: "remember_account",
+      arguments: { address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+    });
+    const text = (result.content as { text: string }[])[0]?.text ?? "";
+    expect(text).toMatch(/[Rr]emembered wallet address/);
+    expect(text).not.toMatch(/[\u4e00-\u9fff]/);
+  });
+
+  it("remember_account 傳 zh-TW 回繁體中文", async () => {
+    const result = await client.callTool({
+      name: "remember_account",
+      arguments: { address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", locale: "zh-TW" },
+    });
+    const text = (result.content as { text: string }[])[0]?.text ?? "";
+    expect(text).toContain("錢包地址");
+  });
+
+  it("vigil 不傳 locale 回英文總覽", async () => {
+    const result = await client.callTool({ name: "vigil", arguments: {} });
+    const text = (result.content as { text: string }[])[0]?.text ?? "";
+    expect(text).toContain("check before you sign");
+    expect(text).toContain("vigil-preview");
+    expect(text).not.toMatch(/[\u4e00-\u9fff]/);
+  });
+
+  it("panel_host_info 不傳 locale 回英文", async () => {
+    const result = await client.callTool({ name: "panel_host_info", arguments: {} });
+    const text = (result.content as { text: string }[])[0]?.text ?? "";
+    expect(text).toContain("Declared extensions");
+    expect(text).not.toMatch(/[\u4e00-\u9fff]/);
+  });
+
+  it("recent_previews 不傳 locale 回英文空清單", async () => {
+    const result = await client.callTool({ name: "recent_previews", arguments: {} });
+    const text = (result.content as { text: string }[])[0]?.text ?? "";
+    expect(text).toContain("No transactions");
+    expect(text).not.toMatch(/[\u4e00-\u9fff]/);
   });
 });
 
@@ -195,12 +297,14 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
   });
 
   it("discover 列出可模擬的操作，含 shmonad.stake 與參數描述", { timeout: 180_000 }, async () => {
+    // 不帶 locale：驗證 default en（demo 環境 agent 沒傳 locale 的路徑）
     const result = await client.callTool({ name: "discover", arguments: {} });
 
     const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
-    // 人話版：要能看到質押這項操作
+    // 人話版：要能看到質押這項操作；en 對話不能混中文
     expect(text).toContain("shmonad.stake");
-    expect(text).toContain("Monad 上可以模擬的操作");
+    expect(text).toContain("Operations this server can simulate on Monad");
+    expect(text).not.toMatch(/[\u4e00-\u9fff]/);
 
     // 結構化版：agent 要靠它準備交易，參數描述必須在
     const { operations } = result.structuredContent as {
@@ -248,6 +352,61 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     expect(() => assertViewInvariants(view)).not.toThrow();
   });
 
+  it("不收 receiver 的方法（erc20.transfer）不硬塞 receiver，模擬照跑", { timeout: 180_000 }, async () => {
+    // 回歸：receiver 補全必須依 schema —— 對 erc20.transfer 這類不收 receiver
+    // 的方法硬塞會變成 Unrecognized key，整筆直接爆掉（實測抓到）。
+    const result = await previewTool({
+      statedRequest: "把 42 個最小單位轉給自己",
+      protocol: "erc20",
+      method: "transfer",
+      params: {
+        // 用主網真實存在的代幣（shMONAD）：0x9999… 是假地址，readTokens 讀 decimals 會失敗
+        token: "0x1B68626dCa36c7fE922fD2d55E4f631d962dE19c",
+        to: "0xcccccccccccccccccccccccccccccccccccccccc",
+        amount: "42",
+      },
+      account: "0xcccccccccccccccccccccccccccccccccccccccc",
+    });
+
+    const { view } = result.structuredContent as { view: EvidencePanelView };
+    // 沒有 Unrecognized key：intent.params 不含 receiver
+    expect(view.intent?.params.receiver).toBeUndefined();
+    expect(view.intent?.params.to).toBe("0xcccccccccccccccccccccccccccccccccccccccc");
+    expect(() => assertViewInvariants(view)).not.toThrow();
+  });
+
+  it("無狀態模式：remember_account 不影響後續 preview 的預設帳戶", { timeout: 180_000 }, async () => {
+    // 全域污染的實證：無狀態 HTTP 下沒有 session id，module 級 Map 的 key
+    // 全部退到 "stdio"，任何請求 remember_account 一次，之後所有請求的
+    // preview 都改用那個地址模擬。stateless 的 remember 不能寫進去。
+    // 注意順序：共享 Map 是 module 級，這個測試必須排在下面「stdio 記住
+    // 地址」的測試之前——那個測試寫過 "stdio" 就回不去了。
+    const statelessClient = await connectServer({ signPageUrl: SIGN_PAGE_URL, stateless: true });
+    const remember = await statelessClient.callTool({
+      name: "remember_account",
+      arguments: { address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    });
+    expect((remember.structuredContent as { supported: boolean }).supported).toBe(false);
+
+    const result = await statelessClient.callTool({
+      name: "preview_transaction",
+      arguments: {
+        locale: "zh-TW",
+        statedRequest: "幫我質押 0.25 MON",
+        protocol: "shmonad",
+        method: "stake",
+        params: { amount: "0.25" },
+        // 不帶 account：stateless 的 remember 沒寫進共享記憶，
+        // 這裡應該退回模擬預設帳戶，而不是被記住的地址污染
+      },
+    });
+
+    const { view } = result.structuredContent as { view: EvidencePanelView };
+    expect(view.account.toLowerCase()).toBe("0xcccccccccccccccccccccccccccccccccccccccc");
+    expect(view.intent?.params.receiver).toBe("0xcccccccccccccccccccccccccccccccccccccccc");
+    expect(() => assertViewInvariants(view)).not.toThrow();
+  });
+
   it("remember_account 記住後，不帶 account 的預覽用記住的地址", { timeout: 180_000 }, async () => {
     const WALLET = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const remember = await client.callTool({
@@ -280,7 +439,7 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
   });
 
   it("vigil 入口工具回總覽：目的、信任模型、指令對照", async () => {
-    const result = await client.callTool({ name: "vigil", arguments: {} });
+    const result = await client.callTool({ name: "vigil", arguments: { locale: "zh-TW" } });
 
     const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
     expect(text).toContain("Vigil — 簽名前檢查");
@@ -301,5 +460,44 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     const tool = tools.find((t) => t.name === "vigil");
     const ui = tool?._meta?.ui as { resourceUri?: string } | undefined;
     expect(ui?.resourceUri).toBeUndefined();
+  });
+
+  it("preview 預設 en：不傳 locale 時面板是英文", { timeout: 180_000 }, async () => {
+    // 不經 previewTool（helper 會注入 zh-TW）——這裡要測的是「不傳 locale 的行為」
+    const result = await client.callTool({
+      name: "preview_transaction",
+      arguments: {
+        statedRequest: "幫我質押 0.25 MON",
+        protocol: "shmonad",
+        method: "stake",
+        params: { amount: "0.25" },
+      },
+    });
+    const { view } = result.structuredContent as { view: EvidencePanelView };
+    expect(view.locale).toBe("en");
+    const text = (result.content as { type: "text"; text: string }[])[0]?.text ?? "";
+    // 回歸：en 面板的框架字串是英文（statedRequest 是使用者原話，保留原文不算）
+    expect(text).toContain("Pre-sign check");
+    expect(text).toContain("What the agent says you asked for");
+    expect(text).toContain("What happens on-chain");
+    expect(text).not.toContain("簽名前檢查");
+    expect(text).not.toContain("結論");
+    expect(text).not.toContain("原始資料");
+  });
+
+  it("preview 支援 zh-CN：面板用簡中", { timeout: 180_000 }, async () => {
+    const result = await previewTool({
+      statedRequest: "幫我質押 0.25 MON",
+      protocol: "shmonad",
+      method: "stake",
+      params: { amount: "0.25" },
+      locale: "zh-CN",
+    });
+
+    const { view } = result.structuredContent as { view: EvidencePanelView };
+    expect(view.locale).toBe("zh-CN");
+    const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
+    expect(text).toContain("签名前检查");
+    expect(text).toContain("链上会发生的");
   });
 });

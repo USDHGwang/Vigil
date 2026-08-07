@@ -20,3 +20,18 @@ Thumbs.db
 
 # 打包產物
 *.zip
+
+# 內部文件：只留本地，禁止進 repo（2026-08-06 歷史淨化後）
+docs/
+2026-07-28-handoff.md
+2026-07-28-problem.md
+2026-07-31-plan.md
+2026-08-02-closing-plan.md
+product-brief.md
+
+# session 工具腳本與環境檔：只留本地（除錯/隧道用，禁止進 repo）
+cancel_ghost_run.py
+check_pages.py
+dispatch_pages.py
+tunnel_launcher.py
+tunnel_url.txt

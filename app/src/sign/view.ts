@@ -8,6 +8,8 @@
 import { formatEther } from "viem";
 import { formatFingerprint, type HandoffPayload } from "../handoff.js";
 import { esc, shortHex } from "../html.js";
+import { t, type Locale } from "../panel/i18n.js";
+import { LOGOMARK_SVG } from "../panel/brand.js";
 
 export type Phase =
   /** 剛載入，還在問瀏覽器有沒有錢包 */
@@ -33,16 +35,16 @@ export interface Action {
 }
 
 /** null 代表這個階段不該有按鈕 */
-export function actionFor(phase: Phase): Action | null {
+export function actionFor(phase: Phase, locale: Locale = "zh-TW"): Action | null {
   switch (phase.kind) {
     case "checking":
-      return { label: "檢查錢包…", disabled: true };
+      return { label: t(locale, "sign_checking"), disabled: true };
     case "connect":
-      return { label: "連接錢包並簽名", disabled: false };
+      return { label: t(locale, "sign_connect"), disabled: false };
     case "waiting":
-      return { label: "在錢包裡確認…", disabled: true };
+      return { label: t(locale, "sign_confirm"), disabled: true };
     case "failed":
-      return { label: "再試一次", disabled: false };
+      return { label: t(locale, "sign_retry"), disabled: false };
     // 帳戶對不上時不給按鈕。要能簽，得先在錢包裡切到對的帳戶，
     // 給一顆按不動或按了會失敗的鈕只會讓人以為是我們壞掉。
     case "wrongAccount":
@@ -52,22 +54,16 @@ export function actionFor(phase: Phase): Action | null {
   }
 }
 
-export function noticeFor(phase: Phase): { tone: "good" | "bad"; text: string } | null {
+export function noticeFor(phase: Phase, locale: Locale = "zh-TW"): { tone: "good" | "bad"; text: string } | null {
   switch (phase.kind) {
     case "noWallet":
-      return { tone: "bad", text: "這個瀏覽器沒有偵測到錢包擴充。裝一個再回來。" };
+      return { tone: "bad", text: t(locale, "sign_no_wallet") };
     case "failed":
-      return { tone: "bad", text: `沒有送出：${phase.message}` };
+      return { tone: "bad", text: t(locale, "sign_not_sent", { message: phase.message }) };
     case "sent":
-      return { tone: "good", text: "已送出。" };
+      return { tone: "good", text: t(locale, "sign_sent") };
     case "wrongAccount":
-      return {
-        tone: "bad",
-        text:
-          "這筆交易的發起帳戶，不是你錢包現在連著的那個。" +
-          "面板上算的餘額與「你支出多少」都是照發起帳戶算的，跟你無關。" +
-          "要簽的話，先在錢包裡切到發起帳戶。",
-      };
+      return { tone: "bad", text: t(locale, "sign_wrong_account") };
     default:
       return null;
   }
@@ -95,73 +91,73 @@ export function canAutoStart(payload: HandoffPayload, connected: boolean): boole
 }
 
 /** 金額用人看得懂的單位。跟面板同一條規則，不給 wei。 */
-export function formatValue(value: string): string {
+export function formatValue(value: string, locale: Locale = "zh-TW"): string {
   const wei = BigInt(value);
-  return wei === 0n ? "不附帶 MON" : `${formatEther(wei)} MON`;
+  return wei === 0n ? t(locale, "sign_no_value") : `${formatEther(wei)} MON`;
 }
 
-function txRows(payload: HandoffPayload): string {
+function txRows(payload: HandoffPayload, locale: Locale): string {
   const tx = payload.transactions[0];
   if (tx === undefined) return "";
   const rows: [string, string][] = [
     // 發起帳戶要顯示：面板上所有「你支出多少」都是照它算的，而它是 agent 給的
-    ["從", tx.from],
-    ["送到", tx.to],
-    ["附帶金額", formatValue(tx.value)],
-    ["資料", shortHex(tx.data, 20, 16)],
+    [t(locale, "sign_from"), tx.from],
+    [t(locale, "sign_to"), tx.to],
+    [t(locale, "sign_value"), formatValue(tx.value, locale)],
+    [t(locale, "sign_data"), shortHex(tx.data, 20, 16)],
   ];
   return rows
     .map(([k, v]) => `<div class="row"><span class="k">${esc(k)}</span><span>${esc(v)}</span></div>`)
     .join("");
 }
 
-function accountConflict(phase: Phase): string {
+function accountConflict(phase: Phase, locale: Locale): string {
   if (phase.kind !== "wrongAccount") return "";
   return `<div class="tx conflict">
-    <div class="row"><span class="k">交易的發起帳戶</span><span>${esc(phase.expected)}</span></div>
-    <div class="row"><span class="k">你錢包現在是</span><span>${esc(phase.connected)}</span></div>
+    <div class="row"><span class="k">${t(locale, "sign_tx_from")}</span><span>${esc(phase.expected)}</span></div>
+    <div class="row"><span class="k">${t(locale, "sign_wallet_now")}</span><span>${esc(phase.connected)}</span></div>
   </div>`;
 }
 
-export function renderCard(payload: HandoffPayload, phase: Phase): string {
+export function renderCard(payload: HandoffPayload, phase: Phase, locale: Locale = "zh-TW"): string {
   const many = payload.transactions.length > 1;
-  const action = actionFor(phase);
-  const notice = noticeFor(phase);
+  const action = actionFor(phase, locale);
+  const notice = noticeFor(phase, locale);
 
   return `<div class="card">
     <div class="brand">
-      <span class="mark">證</span>
-      <span class="name">Vigil · 簽名前檢查</span>
-      <span class="src"><span class="live"></span>Monad 主網模擬</span>
+      <span class="mark">${LOGOMARK_SVG}</span>
+      <span class="name">${t(locale, "panel_name")}</span>
+      <span class="src"><span class="live"></span>${t(locale, "panel_source")}</span>
     </div>
-    <h1>簽名前最後一步</h1>
+    <h1>${t(locale, "sign_title")}</h1>
     <p class="lead">${esc(payload.summary)}</p>
 
     <div class="fp">
-      <div class="k">交接指紋</div>
+      <div class="k">${t(locale, "sign_fingerprint")}</div>
       <div class="v">${esc(formatFingerprint(payload.fingerprint))}</div>
-      <p class="hint">跟面板上顯示的對一下。一樣，代表這筆交易中間沒有被換過。</p>
+      <p class="hint">${t(locale, "sign_fp_hint")}</p>
     </div>
 
     <div class="tx">
-      <div class="k">${many ? `這批有 ${payload.transactions.length} 筆，以下是第 1 筆` : "交易內容"}</div>
-      ${txRows(payload)}
+      <div class="k">${many ? t(locale, "sign_batch_prefix", { n: String(payload.transactions.length) }) : t(locale, "sign_tx_content")}</div>
+      ${txRows(payload, locale)}
     </div>
 
-    ${many ? `<p class="bad">目前一次只送得出一筆。要送完整批，等多筆簽名做好再來。</p>` : ""}
+    ${many ? `<p class="bad">${t(locale, "sign_many_warn")}</p>` : ""}
     ${notice ? `<p class="${notice.tone}">${esc(notice.text)}</p>` : ""}
-    ${accountConflict(phase)}
-    ${phase.kind === "sent" ? `<p class="good">交易雜湊：<code>${esc(phase.hash)}</code></p>` : ""}
+    ${accountConflict(phase, locale)}
+    ${phase.kind === "sent" ? `<p class="good">${t(locale, "sign_tx_hash")} <code>${esc(phase.hash)}</code></p>` : ""}
     ${
       action
         ? `<button id="go"${action.disabled ? " disabled" : ""}>${esc(action.label)}</button>`
         : ""
     }
 
-    <p class="foot">這一頁不會保存也不會上傳你的交易。它碰不到你的私鑰，簽名在你的錢包裡完成。</p>
+    <p class="foot">${t(locale, "sign_foot")}</p>
   </div>`;
 }
 
-export function renderFailure(message: string): string {
-  return `<div class="card"><h1>沒辦法繼續</h1><p class="bad">${esc(message)}</p></div>`;
+export function renderFailure(message: string, locale: Locale = "zh-TW"): string {
+  return `<div class="card"><h1>${t(locale, "sign_fail_title")}</h1><p class="bad">${esc(message)}</p></div>`;
 }

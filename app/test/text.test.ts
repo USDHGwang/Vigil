@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { allFixtures } from "../src/fixtures.js";
-import { displayWidth, renderText, wrap } from "../src/panel/text.js";
+import { clean, displayWidth, renderText, wrap } from "../src/panel/text.js";
 
 const names = Object.keys(allFixtures) as (keyof typeof allFixtures)[];
 
@@ -200,5 +200,100 @@ describe("ANSI 上色（VIGIL_COLOR）", () => {
     for (const line of renderText(allFixtures.stakeMatch, { color: true }).split("\n")) {
       expect(displayWidth(strip(line))).toBeLessThanOrEqual(80);
     }
+  });
+});
+
+describe("控制字元防護", () => {
+  // intent.text 是 agent 轉述使用者原話，未驗證：\x1b[2J 能清掉 CLI host 的
+  // 整個畫面、\x1b[31m 能讓假 verdict 看起來像真的。輸出前必須剝掉。
+  it("intent.text 的 ESC 序列全部剝掉", () => {
+    const text = renderText({
+      ...allFixtures.stakeMatch,
+      intent: {
+        ...allFixtures.stakeMatch.intent!,
+        text: "幫我質押 10 MON\u001b[2J\u001b[31mFAKE\u001b[0m",
+      },
+    });
+    expect(text).not.toContain("\u001b");
+    // 內容本身還在，只是控制字元沒了
+    expect(text).toContain("幫我質押 10 MON");
+  });
+
+  it("params 顯示值、conflicts、reason、warning message 的 ESC 也剝掉", () => {
+    const partial = renderText({
+      ...allFixtures.unstakePartial,
+      intent: {
+        ...allFixtures.unstakePartial.intent!,
+        params: { amount: "10\u001b[31m", receiver: "0x1234\u001b[2J" },
+      },
+      verdict: { kind: "partial", reason: "贖回要等解鎖流程\u001b[2J\u001b[31m" },
+    });
+    expect(partial).not.toContain("\u001b");
+
+    const mismatch = renderText({
+      ...allFixtures.approveMismatch,
+      verdict: {
+        kind: "mismatch",
+        conflicts: ["沒有任何 MON 被質押", "多出一筆授權\u001b[31mFAKE\u001b[0m"],
+      },
+    });
+    expect(mismatch).not.toContain("\u001b");
+
+    const blocked = renderText({
+      ...allFixtures.blockedByWarning,
+      verdict: {
+        kind: "blocked",
+        warnings: [{ code: "INSUFFICIENT_BALANCE", message: "餘額不夠\u001b[2J" }],
+      },
+    });
+    expect(blocked).not.toContain("\u001b");
+  });
+
+  it("沒有可解讀事件的地址有控制字元也剝掉", () => {
+    const [first, second] = allFixtures.noAdapterModeB.changes;
+    if (first === undefined || second === undefined || second.kind !== "event") {
+      throw new Error("fixture 壞了");
+    }
+    const text = renderText({
+      ...allFixtures.noAdapterModeB,
+      changes: [first, { ...second, address: `0x1234\u001b[2J` }],
+    });
+    expect(text).not.toContain("\u001b");
+  });
+
+  it("\\t 與 \\n 是合法排版字元，clean 保留它們", () => {
+    expect(clean("a\tb\nc")).toBe("a\tb\nc");
+    // CR（U+000D）也保留
+    expect(clean("a\tb\nc" + String.fromCharCode(13) + "d")).toBe("a\tb\nc" + String.fromCharCode(13) + "d");
+  });
+
+  it("renderText 保留內容裡的 tab 與換行", () => {
+    const text = renderText({
+      ...allFixtures.stakeMatch,
+      intent: {
+        ...allFixtures.stakeMatch.intent!,
+        text: "幫我質押\t10 MON\n順便查一下餘額",
+      },
+    });
+    expect(text).toContain("\t");
+    expect(text).toContain("MON\n順便查一下餘額");
+  });
+
+  it("開 color 時 verdict 的 ANSI 色碼仍在（只剝內容，不碰 tint）", () => {
+    const text = renderText(
+      {
+        ...allFixtures.stakeMatch,
+        intent: {
+          ...allFixtures.stakeMatch.intent!,
+          text: "幫我質押 10 MON\u001b[2J\u001b[31mFAKE\u001b[0m",
+        },
+      },
+      { color: true },
+    );
+    // 注入的序列沒了
+    expect(text).not.toContain("\u001b[2J");
+    expect(text).not.toContain("\u001b[31mFAKE");
+    // 程式自己的 verdict 綠還在
+    expect(text).toContain("\u001b[32m✓  沒有發現意料外的動作\u001b[0m");
   });
 });

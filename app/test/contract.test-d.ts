@@ -29,6 +29,7 @@ const ok: EvidencePanelView = {
   signable: true,
   account,
   accountSource: "agent",
+  locale: "en",
   tokens: {},
   transactions: [{ from: account, to: account, data: "0x", value: "0x0" }],
   fingerprint: "AABBCCDD11223344",

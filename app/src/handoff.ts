@@ -14,6 +14,7 @@
 
 import type { UnsignedTx } from "@themoss/core";
 import { keccak256, toHex } from "viem";
+import type { Locale } from "./panel/i18n.js";
 
 /** Monad 主網。Moss v1 只支援這條鏈，Runtime 會驗。 */
 export const MONAD_CHAIN_ID = 143;
@@ -24,6 +25,8 @@ export interface HandoffPayload {
   /** 面板上顯示過的那句話，簽名頁再顯示一次讓使用者對照 */
   summary: string;
   fingerprint: string;
+  /** 面板的語言。簽名頁跟著它顯示，不然英文對話會跳到中文簽名頁。 */
+  locale?: Locale;
 }
 
 /**

@@ -10,6 +10,7 @@
 
 import { type Change, type Receipt, type UnsignedTx, verifyReceiptCoverage } from "@themoss/core";
 import type { Warning as SimulatorWarning } from "@themoss/simulator";
+import type { Locale } from "./panel/i18n.js";
 
 export type { Change, Receipt, ReceiptChange, Stub, UnsignedTx } from "@themoss/core";
 export type { TransactionSimulation } from "@themoss/simulator";
@@ -88,6 +89,11 @@ export interface EvidencePanelView {
   signable: boolean;
   /** 誰在送這筆交易。判斷資產是流出還是流入要用它。 */
   account: string;
+  /**
+   * 面板文案語言。preview_transaction 收 locale 參數，由 agent 從對話
+   * 語言決定；預設 en。TUI 與 MCP UI 兩個出口讀同一個值，語言一致。
+   */
+  locale: Locale;
   /**
    * `account` 是哪裡來的。
    *

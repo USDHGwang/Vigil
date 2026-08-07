@@ -18,6 +18,8 @@ import type { AddressValue } from "@themoss/core";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { renderText } from "../panel/text.js";
+import { LOGOMARK_ICON } from "../panel/brand.js";
+import { t, type Locale } from "../panel/i18n.js";
 import { getStack, previewTransaction } from "../pipeline.js";
 import { formatFingerprint } from "../handoff.js";
 import { MAX_RECORDS, recent, record } from "../history.js";
@@ -26,6 +28,18 @@ export const PANEL_RESOURCE_URI = "ui://vigil/panel.html";
 
 /** MCP Apps extension 的識別碼，client 會在 capabilities.extensions 裡宣告 */
 export const UI_EXTENSION_ID = "io.modelcontextprotocol/ui";
+
+/**
+ * 資料工具的語言參數。跟 preview_transaction 的 locale 同一套機制：
+ * agent 知道使用者用什麼語言，是唯一能決定這件事的角色；沒傳就是 en。
+ * 共用同一個 schema，5 個工具說法一致，也避免 enum 字串散落各處。
+ */
+export const LOCALE_SCHEMA = z
+  .enum(["en", "zh-CN", "zh-TW"])
+  .default("en")
+  .describe(
+    "Language for Vigil's reply. Choose from the language the user is speaking in this conversation (default: en).",
+  );
 
 /** 模擬用的預設帳戶。模擬器會替它預先注資，不需要真的持有資產。 */
 const DEFAULT_ACCOUNT = "0xcccccccccccccccccccccccccccccccccccccccc";
@@ -37,9 +51,16 @@ const DEFAULT_ACCOUNT = "0xcccccccccccccccccccccccccccccccccccccccc";
  * 一個 host 的一條連線，固定 key 就等於該 session。故意**不落盤**：
  * 產品不信任中間人，地址是使用者的資產資訊，只活在記憶體、session
  * 結束即消失。跨 session 記住（A3）是 wallet connect 之後的事。
+ * （http.ts 的無狀態模式沒有 session id——這個 module 級 Map 會被所有
+ * 請求共用，那個部署完全不寫記憶，見 remember_account 的 stateless 分支。）
  */
 const SESSION_KEY_STDIO = "stdio";
 const rememberedAccounts = new Map<string, string>();
+
+/** 測試用：清掉 session 記憶。正式路徑沒有理由動它。 */
+export function resetRememberedAccounts(): void {
+  rememberedAccounts.clear();
+}
 
 /** 解析這次預覽的發送帳戶：參數 → session 記憶 → 模擬預設 */
 function resolveAccount(account: string | undefined, sessionId: string | undefined): string {
@@ -81,10 +102,23 @@ export interface ServerOptions {
    * HTTP 模式走自己那個 `/sign` 路由。
    */
   signPageUrl?: string;
+  /**
+   * HTTP 無狀態模式（http.ts）：每個請求新建一個 server，沒有 session id、
+   * 沒有 session 生命週期。這種模式下 remember_account 的「記住」沒有意義
+   * ——module 級 Map 是所有請求共用的，照寫的話任何人的 remember_account
+   * 一次，之後所有請求的 preview 都會用那個地址模擬（全域污染的實證：
+   * 無狀態請求沒有 session，key 全部退到 "stdio"）。進入點傳 true 時
+   * server 完全不寫記憶，remember_account 回 supported:false。
+   */
+  stateless?: boolean;
 }
 
 export function createServer(options: ServerOptions = {}): McpServer {
-  const server = new McpServer({ name: "vigil", version: "0.2.0" });
+  const server = new McpServer({
+    name: "vigil",
+    version: "0.2.0",
+    icons: [{ src: LOGOMARK_ICON, mimeType: "image/svg+xml", sizes: ["64x32"], theme: "dark" }],
+  });
 
   registerAppTool(
     server,
@@ -102,6 +136,12 @@ export function createServer(options: ServerOptions = {}): McpServer {
       inputSchema: {
         statedRequest: z
           .string()
+          // 沒有長度上限的話，50KB 的引言原樣進 view 和 TUI 輸出，膨脹 agent context。
+          // 引言是「使用者要求什麼」，不是整個對話——超過 2000 字元就不是引言了。
+          .max(
+            2000,
+            "statedRequest is too long — quote the user's request, not the whole conversation (max 2000 chars)",
+          )
           .describe("The user's own words for what they asked, quoted verbatim, not paraphrased."),
         protocol: z.string().describe("Protocol slug, for example 'shmonad' or 'kuru'."),
         method: z.string().describe("Method on that protocol, for example 'stake' or 'unstake'."),
@@ -116,27 +156,33 @@ export function createServer(options: ServerOptions = {}): McpServer {
           .string()
           .regex(/^0x[0-9a-fA-F]{40}$/, "account must be a 20-byte hex address, like 0x1234…abcd")
           .optional()
-          .describe("Address sending the transaction. Defaults to a simulation-only account."),
+          .describe(
+            "Address sending the transaction. Defaults to a simulation-only account. " +
+              "Pass the address the user provided in this conversation — HTTP deployments " +
+              "do not support remember_account's cross-request memory.",
+          ),
+        locale: z
+          .enum(["en", "zh-CN", "zh-TW"])
+          .default("en")
+          .describe(
+            "Language for the evidence panel. Choose from the language the user is " +
+              "speaking in this conversation (default: en).",
+          ),
       },
       _meta: { ui: { resourceUri: PANEL_RESOURCE_URI } },
     },
-    async ({ statedRequest, protocol, method, params, account }, extra): Promise<CallToolResult> => {
+    async ({ statedRequest, protocol, method, params, account, locale }, extra): Promise<CallToolResult> => {
       try {
-        // receiver 省略時視為質押給自己（= 發送帳戶）。質押給自己是
-        // 最常見的形態，agent 不該被「不知道 receiver 填什麼」卡住——
-        // 使用者說「幫我質押 0.25 MON」時本來就沒指定收款人。
-        // 只補 receiver 這個語意參數；to/token 缺了是真正的錯誤，不補。
+        // receiver 省略時視為質押給自己（= 發送帳戶），在 pipeline 裡依
+        // 該 method 的 schema 決定要不要補（見 pipeline.ts 的 receiverDefault）。
         const resolvedAccount = resolveAccount(account, extra.sessionId) as AddressValue;
-        const paramsWithDefault = { ...params };
-        if (paramsWithDefault.receiver === undefined) {
-          paramsWithDefault.receiver = resolvedAccount;
-        }
         const result = await previewTransaction({
           account: resolvedAccount,
           protocol,
           method,
-          params: paramsWithDefault as Record<string, unknown>,
+          params: params as Record<string, unknown>,
           statedRequest,
+          locale,
         });
         // 記一筆，讓使用者之後回頭找得到「剛剛那筆是什麼」。
         // 只記成功的預覽：回頭看的價值在於「我做過什麼」，不是「我試錯過什麼」。
@@ -194,22 +240,23 @@ export function createServer(options: ServerOptions = {}): McpServer {
           .max(MAX_RECORDS)
           .optional()
           .describe(`How many to return, newest first. Defaults to ${MAX_RECORDS}.`),
+        locale: LOCALE_SCHEMA,
       },
       _meta: { ui: { resourceUri: PANEL_RESOURCE_URI } },
     },
-    async ({ limit }): Promise<CallToolResult> => {
+    async ({ limit, locale }): Promise<CallToolResult> => {
       const list = recent(limit ?? MAX_RECORDS);
       const text =
         list.length === 0
-          ? "這個 session 還沒有預覽過任何交易。"
+          ? t(locale, "tool_recent_empty")
           : list
               .map((r, i) => {
-                const when = new Date(r.at).toLocaleTimeString();
+                const when = new Date(r.at).toLocaleTimeString(locale);
                 return [
-                  `${i + 1}. ${when}  ${r.protocol}.${r.method}  [${r.verdict}]${r.signable ? "" : " 不可簽名"}`,
-                  `   agent 說你要求的：${r.statedRequest}`,
-                  `   效果：${r.summary}`,
-                  `   指紋：${formatFingerprint(r.fingerprint)}`,
+                  `${i + 1}. ${when}  ${r.protocol}.${r.method}  [${r.verdict}]${r.signable ? "" : t(locale, "tool_recent_not_signable")}`,
+                  t(locale, "tool_recent_agent_said", { request: r.statedRequest }),
+                  t(locale, "tool_recent_effect", { summary: r.summary }),
+                  t(locale, "tool_recent_fingerprint", { fp: formatFingerprint(r.fingerprint) }),
                 ].join("\n");
               })
               .join("\n\n");
@@ -243,13 +290,15 @@ export function createServer(options: ServerOptions = {}): McpServer {
         "the user asks to do something on-chain — it tells you how to prepare the " +
         "transaction before calling preview_transaction. Query-like reads (balances, " +
         "allowances) are omitted: you don't sign for a read.",
-      inputSchema: {},
+      inputSchema: {
+        locale: LOCALE_SCHEMA,
+      },
       // 注意：discover 故意**不**宣告 ui resource。它是給 agent 讀的
       // 資料工具（操作清單），不是給使用者看的交易視圖——宣告了 host
       // 會嘗試用面板渲染，但 discover 的結果不是 EvidencePanelView，
       // 渲染器只會顯示「沒有可以顯示的結果」。
     },
-    async (): Promise<CallToolResult> => {
+    async ({ locale }): Promise<CallToolResult> => {
       const { registry } = await getStack();
       const coordinates = registry.discover().filter((c) => c.kind === "capability");
       const stubs = registry.load(coordinates);
@@ -261,7 +310,7 @@ export function createServer(options: ServerOptions = {}): McpServer {
             // 這裡補上提示，讓 agent 直接用 native 字面量走單腿市場。
             const hint =
               k === "tokenIn" || k === "tokenOut"
-                ? ' (token address, or the literal "native" for native MON)'
+                ? t(locale, "tool_discover_native_hint")
                 : "";
             return `${k} (${v.description}${hint})`;
           })
@@ -269,7 +318,12 @@ export function createServer(options: ServerOptions = {}): McpServer {
         return `${s.protocol}.${s.method} — ${s.intent}${params ? `  [${params}]` : ""}`;
       });
       return {
-        content: [{ type: "text", text: `Monad 上可以模擬的操作（${stubs.length}）：\n\n${lines.join("\n")}` }],
+        content: [
+          {
+            type: "text",
+            text: `${t(locale, "tool_discover_title", { n: String(stubs.length) })}\n\n${lines.join("\n")}`,
+          },
+        ],
         structuredContent: { operations: stubs },
       };
     },
@@ -303,10 +357,28 @@ export function createServer(options: ServerOptions = {}): McpServer {
           .string()
           .regex(/^0x[0-9a-fA-F]{40}$/, "address must be a 20-byte hex address, like 0x1234…abcd")
           .describe("The user's wallet address, exactly as they provided it."),
+        locale: LOCALE_SCHEMA,
       },
       // 資料工具：不宣告 ui resource（理由同 discover）
     },
-    async ({ address }, extra): Promise<CallToolResult> => {
+    async ({ address, locale }, extra): Promise<CallToolResult> => {
+      // HTTP 無狀態模式（http.ts）：每個請求都是新的 server、沒有 session id，
+      // module 級 Map 是所有請求共用的——照寫等於任何人的 remember_account
+      // 污染之後所有人的 preview（無狀態請求沒有 session，key 全退到 "stdio"）。
+      // 這個部署模式不支援跨請求記憶，回覆講清楚，讓 agent 改成在對話裡
+      // 記住地址、每筆 preview_transaction 都帶 account 參數。
+      if (options.stateless) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: t(locale, "tool_remember_stateless"),
+            },
+          ],
+          structuredContent: { remembered: null, session: null, supported: false },
+        };
+      }
+
       const key = extra.sessionId ?? SESSION_KEY_STDIO;
       rememberedAccounts.set(key, address);
       const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -314,12 +386,14 @@ export function createServer(options: ServerOptions = {}): McpServer {
         content: [
           {
             type: "text",
-            text:
-              `已記住這個對話的錢包地址 ${short}。之後的預覽都會用這個地址模擬 ` +
-              `（真實餘額與手續費）。僅存在這個 session 的記憶體，不會寫入任何地方。`,
+            text: t(locale, "tool_remember_ok", { short }),
           },
         ],
-        structuredContent: { remembered: address, session: key === SESSION_KEY_STDIO ? null : key },
+        structuredContent: {
+          remembered: address,
+          session: key === SESSION_KEY_STDIO ? null : key,
+          supported: true,
+        },
       };
     },
   );
@@ -341,9 +415,11 @@ export function createServer(options: ServerOptions = {}): McpServer {
         "Report what this MCP host declared about itself, including whether it supports " +
         "the MCP Apps UI extension. Use this to find out if the evidence panel will render " +
         "as a visual panel or fall back to the text version.",
-      inputSchema: {},
+      inputSchema: {
+        locale: LOCALE_SCHEMA,
+      },
     },
-    async (): Promise<CallToolResult> => {
+    async ({ locale }): Promise<CallToolResult> => {
       const capabilities = server.server.getClientCapabilities();
       const client = server.server.getClientVersion();
       const extensions = (capabilities as Record<string, unknown> | undefined)?.extensions;
@@ -358,11 +434,14 @@ export function createServer(options: ServerOptions = {}): McpServer {
           {
             type: "text",
             text: [
-              `host: ${client?.name ?? "(未宣告)"} ${client?.version ?? ""}`.trim(),
-              `宣告的 extensions: ${declared.length > 0 ? declared.join(", ") : "（沒有宣告任何 extension）"}`,
-              `支援 MCP Apps 渲染: ${supportsApps ? "是，面板會渲染成畫面" : "否，會用文字版面板"}`,
+              `host: ${client?.name ?? t(locale, "tool_host_unknown")} ${client?.version ?? ""}`.trim(),
+              t(locale, "tool_host_declared", {
+                list:
+                  declared.length > 0 ? declared.join(", ") : t(locale, "tool_host_none_ext"),
+              }),
+              `MCP Apps: ${supportsApps ? t(locale, "tool_host_supports_yes") : t(locale, "tool_host_supports_no")}`,
               "",
-              `完整 capabilities: ${JSON.stringify(capabilities ?? null)}`,
+              t(locale, "tool_host_caps", { json: JSON.stringify(capabilities ?? null) }),
             ].join("\n"),
           },
         ],
@@ -409,26 +488,26 @@ export function createServer(options: ServerOptions = {}): McpServer {
         "overview of Vigil's purpose, its trust model in one sentence, and a map from " +
         "user-facing commands (vigil-preview, vigil-discover, vigil-remember, vigil-recent) " +
         "to the underlying tools.",
-      inputSchema: {},
+      inputSchema: {
+        locale: LOCALE_SCHEMA,
+      },
       // 資料工具：不宣告 ui resource（理由同 discover）
     },
-    async (): Promise<CallToolResult> => {
+    async ({ locale }): Promise<CallToolResult> => {
       const text = [
-        "Vigil — 簽名前檢查。你叫 agent 在 Monad 上做事之前，先用 Vigil 把交易實際會做什麼模擬出來給你看。",
+        t(locale, "tool_vigil_intro"),
         "",
-        "信任模型一句話：證據來自 Monad 主網模擬，不是來自準備這筆交易的 agent；你簽名之前，看到的每一項都是鏈上真的會發生的。",
+        t(locale, "tool_vigil_trust"),
         "",
-        "指令對照（說這些話，agent 會對應去呼叫工具）：",
-        "  vigil-preview   預覽一筆交易 → preview_transaction",
-        "  vigil-discover  看 Monad 上能做什麼操作 → discover",
-        "  vigil-remember  記住你的錢包地址（這個對話）→ remember_account",
-        "  vigil-recent    回查這個對話預覽過什麼 → recent_previews",
+        t(locale, "tool_vigil_cmd_header"),
+        `  vigil-preview   ${t(locale, "tool_vigil_cmd_preview")}`,
+        `  vigil-discover  ${t(locale, "tool_vigil_cmd_discover")}`,
+        `  vigil-remember  ${t(locale, "tool_vigil_cmd_remember")}`,
+        `  vigil-recent    ${t(locale, "tool_vigil_cmd_recent")}`,
         "",
-        "第一次使用：告訴 agent 你的錢包地址（agent 會呼叫 vigil-remember），",
-        "然後說你想做什麼（例如「幫我質押 0.25 MON 成 shMONAD」），",
-        "agent 會 discover → 準備交易 → vigil-preview 給你看證據，你確認後在錢包裡簽名。",
+        t(locale, "tool_vigil_first_use"),
         "",
-        "你不需要記任何指令——直接說你想做什麼，agent 會用這些工具完成。",
+        t(locale, "tool_vigil_no_memo"),
       ].join("\n");
       return {
         content: [{ type: "text", text }],

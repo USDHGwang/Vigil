@@ -93,7 +93,9 @@ app.get(["/sign", "/sign/*splat"], (_req, res) => {
  */
 app.post("/mcp", async (req, res) => {
   try {
-    const server = createServer({ signPageUrl: SIGN_PAGE_URL });
+    // stateless: true —— 每個請求新建 server，remember_account 的跨請求記憶
+    // 沒有意義（module 級 Map 會被所有請求共用），server 側直接不寫。
+    const server = createServer({ signPageUrl: SIGN_PAGE_URL, stateless: true });
     // 不傳 options 就是無狀態：沒有 session id、不做 session 驗證
     const transport = new StreamableHTTPServerTransport();
 

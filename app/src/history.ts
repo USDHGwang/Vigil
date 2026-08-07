@@ -26,6 +26,7 @@
  */
 
 import type { EvidencePanelView } from "./contract.js";
+import { t } from "./panel/i18n.js";
 
 /** 一筆預覽紀錄。刻意不存 calldata 與完整參數——回頭看不需要，留著只是風險。 */
 export interface PreviewRecord {
@@ -53,13 +54,16 @@ export const MAX_RECORDS = 50;
 /** 從 view 抽出要記的東西。純函式，好測。 */
 export function toRecord(view: EvidencePanelView, at: number): PreviewRecord {
   const receipt = view.receipt;
+  // fallback 文字照這筆 view 自己的語言（view 帶 locale）：
+  // 中文對話記中文、英文對話記英文，回頭看不會混語言。
+  const locale = view.locale ?? "en";
   const summary =
     receipt !== null && receipt.text !== ""
       ? receipt.text
-      : `${view.changes.length} 筆未解讀的變動`;
+      : t(locale, "raw_changes_short", { n: String(view.changes.length) });
   return {
     at,
-    statedRequest: view.intent?.text ?? "（沒有可對照的要求）",
+    statedRequest: view.intent?.text ?? t(locale, "no_compare"),
     protocol: view.intent?.protocol ?? "",
     method: view.intent?.method ?? "",
     verdict: view.verdict.kind,

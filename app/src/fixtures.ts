@@ -182,6 +182,8 @@ const base = {
   account: ACCOUNT,
   // agent 給的，未經驗證 —— 面板上的「你」全部建立在它上面
   accountSource: "agent" as const,
+  // fixture 斷言的是 zh-TW 文案，所以 fixture 統一 zh-TW
+  locale: "zh-TW" as const,
   tokens: TOKENS,
   warnings: [] as Warning[],
 };

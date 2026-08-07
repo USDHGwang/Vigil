@@ -139,6 +139,28 @@ Claude Desktop 的 Connectors 只收 https，所以本機這條要配隧道或�
 
 ---
 
+## 各 host 的呈現形式（2026-08-07 查證）
+
+Vigil 用 MCP Apps extension（`io.modelcontextprotocol/ui`）渲染 HTML 面板；不支援的 host
+自動降級成文字面板（ANSI 上色可用 `VIGIL_COLOR=1` 開啟）。支援與否由 host 在握手時
+自己宣告（`extensions` 欄位），不是 Vigil 猜的。
+
+| Host | 呈現 | 安裝方式 | 證據 |
+|---|---|---|---|
+| Claude 網頁版（Connectors） | **HTML 面板** | remote URL（`https://<endpoint>/mcp`） | 官方 matrix ✓ + 實測渲染通過 |
+| Claude Desktop | **HTML 面板** | stdio config（裝法一） | 官方 matrix ✓ |
+| ChatGPT | **HTML 面板** | remote URL | 官方 matrix ✓ |
+| Cursor 2.6+ | **HTML 面板** | mcpServers JSON | 官方 matrix ✓ |
+| VS Code Copilot / Goose / Postman / MCPJam / M365 Copilot / Archestra / PostHog Code | **HTML 面板** | 各自格式 | 官方 matrix ✓ |
+| Claude Code | 文字面板 | `claude mcp add`（裝法一） | 實測 ANSI 正確 |
+| Codex | 文字面板 | `codex mcp add vigil --command node --args …` | MCP Apps 渲染被 product gate 擋（openai/codex#21019），工具可用 |
+| Hermes Agent | 文字面板 | config.yaml `mcp_servers`（裝法一） | 實測：無 extensions 宣告；另支援 `elicitation`（form/url） |
+| OpenCode | 文字面板 | opencode.json `type: "local"` + `command` 陣列 | CLI host，未列官方 matrix |
+
+官方 matrix（社群維護）：<https://modelcontextprotocol.io/extensions/client-matrix>
+
+---
+
 ## 傳輸方式的決定（2026-08-01）
 
 **產品要走的是 remote HTTPS，不是本機 stdio。**

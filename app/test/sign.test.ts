@@ -92,6 +92,16 @@ describe("帳戶比對", () => {
     expect(text).toContain("跟你無關");
     expect(text).toContain("切到發起帳戶");
   });
+
+  it("locale 傳 en 時整頁是英文（面板語言跟到簽名頁）", () => {
+    const html = renderCard(one(), { kind: "connect" }, "en");
+    expect(html).toContain("Last step before signing");
+    expect(html).toContain("Handoff fingerprint");
+    expect(html).toContain("Connect wallet &amp; sign");
+    expect(html).toContain("Pre-sign check");
+    expect(html).not.toContain("簽名前最後一步");
+    expect(html).not.toContain("交接指紋");
+  });
 });
 
 describe("按鈕", () => {

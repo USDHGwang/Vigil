@@ -175,14 +175,14 @@ describe("findApprovals", () => {
 
 describe("structuralVerdict", () => {
   it("乾淨的質押算一致", () => {
-    const verdict = structuralVerdict(stakeRequest, receiptWith("stake"), []);
+    const verdict = structuralVerdict(stakeRequest, receiptWith("stake"), [], "zh-TW");
     expect(verdict.kind).toBe("match");
   });
 
   it("冒出使用者沒要求的無上限授權算不一致", () => {
     const verdict = structuralVerdict(stakeRequest, receiptWith("stake"), [
       approval(ACCOUNT, STRANGER, 2n ** 256n - 1n),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("mismatch");
     if (verdict.kind !== "mismatch") throw new Error("unreachable");
     expect(verdict.conflicts[0]).toContain("無上限授權");
@@ -195,17 +195,17 @@ describe("structuralVerdict", () => {
     };
     const verdict = structuralVerdict(request, receiptWith("stake"), [
       approval(ACCOUNT, STRANGER, 1000n),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("match");
   });
 
   it("實際 operation 對不上呼叫的 method 算不一致", () => {
-    const verdict = structuralVerdict(stakeRequest, receiptWith("unstake"), []);
+    const verdict = structuralVerdict(stakeRequest, receiptWith("unstake"), [], "zh-TW");
     expect(verdict.kind).toBe("mismatch");
   });
 
   it("沒有解讀模組時回報 partial 而不是假裝一致", () => {
-    const verdict = structuralVerdict(stakeRequest, null, []);
+    const verdict = structuralVerdict(stakeRequest, null, [], "zh-TW");
     expect(verdict.kind).toBe("partial");
   });
 
@@ -222,7 +222,7 @@ describe("structuralVerdict", () => {
     };
     const verdict = structuralVerdict(request, receiptWith("approve"), [
       approval(ACCOUNT, STRANGER, 2n ** 256n - 1n),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("partial");
     if (verdict.kind !== "partial") throw new Error("unreachable");
     expect(verdict.reason).toContain("無上限");
@@ -238,7 +238,7 @@ describe("structuralVerdict", () => {
     };
     const verdict = structuralVerdict(request, receiptWith("approve"), [
       approval(ACCOUNT, STRANGER, 1000n),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("match");
   });
 
@@ -255,7 +255,7 @@ describe("structuralVerdict", () => {
     // 使用者指名 MARKET，鏈上卻是授權給 STRANGER，而且有上限（rule 4 管不到）
     const verdict = structuralVerdict(request, receiptWith("approve"), [
       approval(ACCOUNT, STRANGER, 1000n),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("mismatch");
     if (verdict.kind !== "mismatch") throw new Error("型別收窄");
     expect(verdict.conflicts[0]).toContain("不是這個操作指定的對象");
@@ -265,7 +265,7 @@ describe("structuralVerdict", () => {
   it("冒出使用者沒要求的 ERC-721 單顆授權算不一致", () => {
     const verdict = structuralVerdict(stakeRequest, receiptWith("stake"), [
       erc721Approval(ACCOUNT, STRANGER, 7n),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("mismatch");
     if (verdict.kind !== "mismatch") throw new Error("型別收窄");
     expect(verdict.conflicts[0]).toContain("NFT 授權");
@@ -286,11 +286,11 @@ describe("多筆交易", () => {
   });
 
   it("單筆不需要警告", () => {
-    expect(multiTransactionWarning([tx("0x0")])).toBeNull();
+    expect(multiTransactionWarning([tx("0x0")], "zh-TW")).toBeNull();
   });
 
   it("多筆要擋，理由講真話：講筆數、講只送得出第一筆", () => {
-    const warning = multiTransactionWarning([tx("0x0"), tx("0x1")]);
+    const warning = multiTransactionWarning([tx("0x0"), tx("0x1")], "zh-TW");
     expect(warning?.code).toBe("MULTI_TX_UNSUPPORTED");
     expect(warning?.message).toContain("2 筆");
     expect(warning?.message).toContain("第一筆");
@@ -329,7 +329,7 @@ describe("整批授權（setApprovalForAll）", () => {
   });
 
   it("說要轉一個 NFT 卻交出整個系列，算不一致", () => {
-    const verdict = structuralVerdict(nftIntent, null, [approvalForAll(ACCOUNT, STRANGER, true)]);
+    const verdict = structuralVerdict(nftIntent, null, [approvalForAll(ACCOUNT, STRANGER, true)], "zh-TW");
     expect(verdict.kind).toBe("mismatch");
     if (verdict.kind !== "mismatch") throw new Error("型別收窄");
     expect(verdict.conflicts[0]).toContain("整批授權");
@@ -340,7 +340,7 @@ describe("整批授權（setApprovalForAll）", () => {
     // approved: false 是把權限收回來
     const verdict = structuralVerdict(nftIntent, receiptWith("transfer"), [
       approvalForAll(ACCOUNT, STRANGER, false),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("match");
   });
 
@@ -358,7 +358,7 @@ describe("整批授權（setApprovalForAll）", () => {
     };
     const verdict = structuralVerdict(asked, receiptWith("approvalForAll"), [
       approvalForAll(ACCOUNT, STRANGER, true),
-    ]);
+    ], "zh-TW");
     expect(verdict.kind).toBe("partial");
     if (verdict.kind !== "partial") throw new Error("型別收窄");
     // 要講清楚範圍：整個系列、含以後才拿到的
@@ -374,7 +374,7 @@ describe("整批授權（setApprovalForAll）", () => {
       params: { collection: NFT, operator: STRANGER, approved: "true" },
       statedRequest: "授權那個市場幫我掛單",
     };
-    const verdict = structuralVerdict(asked, receiptWith("transfer"), []);
+    const verdict = structuralVerdict(asked, receiptWith("transfer"), [], "zh-TW");
     expect(verdict.kind).toBe("mismatch");
   });
 
@@ -383,6 +383,7 @@ describe("整批授權（setApprovalForAll）", () => {
       { ...nftIntent, method: "approve", params: { operator: STRANGER, spender: STRANGER } },
       receiptWith("approvalForAll"),
       [approvalForAll(ACCOUNT, STRANGER, true), approval(ACCOUNT, STRANGER, 2n ** 256n - 1n)],
+      "zh-TW",
     );
     expect(verdict.kind).toBe("partial");
     if (verdict.kind !== "partial") throw new Error("型別收窄");
@@ -407,13 +408,13 @@ describe("餘額夠不夠", () => {
   it("餘額剛好等於本金加手續費，算付得起", () => {
     const a = affordability(ONE + 21_000n * 100n, [tx("0xde0b6b3a7640000")], 21_000n, 100n);
     expect(a.short).toBe(0n);
-    expect(affordabilityWarning(a)).toBeNull();
+    expect(affordabilityWarning(a, "zh-TW")).toBeNull();
   });
 
   it("手續費差一 wei 就算付不起，不四捨五入放行", () => {
     const a = affordability(ONE + 21_000n * 100n - 1n, [tx("0xde0b6b3a7640000")], 21_000n, 100n);
     expect(a.short).toBe(1n);
-    expect(affordabilityWarning(a)?.code).toBe("INSUFFICIENT_BALANCE");
+    expect(affordabilityWarning(a, "zh-TW")?.code).toBe("INSUFFICIENT_BALANCE");
   });
 
   it("手續費要算進去：本金付得起但加了手續費就不夠", () => {
@@ -430,7 +431,7 @@ describe("餘額夠不夠", () => {
   });
 
   it("訊息講 MON 不講 wei，而且說得出差多少", () => {
-    const message = affordabilityWarning(affordability(0n, [tx("0xde0b6b3a7640000")], 0n, 0n))
+    const message = affordabilityWarning(affordability(0n, [tx("0xde0b6b3a7640000")], 0n, 0n), "zh-TW")
       ?.message;
     expect(message).toContain("1 MON");
     expect(message).not.toMatch(/\d{15,}/);
@@ -464,7 +465,7 @@ describe("gas 估不到的時候", () => {
   });
 
   it("估不到時的警告講清楚是檢查沒做完，不是交易有問題", () => {
-    const warning = feeUnknownWarning(10n ** 18n, 10n ** 17n);
+    const warning = feeUnknownWarning(10n ** 18n, 10n ** 17n, "zh-TW");
     expect(warning.code).toBe("FEE_ESTIMATE_UNAVAILABLE");
     expect(warning.message).toContain("估不出來");
     expect(warning.message).toContain("檢查沒做完");

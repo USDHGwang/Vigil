@@ -27,7 +27,7 @@ const anyEvent: Change = { kind: "event", address: SHMONAD, topics: ["0x00"], da
 const anyNative: Change = { kind: "nativeTransfer", from: ME, to: SHMONAD, value: "1" };
 
 const h = (data: unknown, change: Change = anyEvent, fallback = "FALLBACK") =>
-  humanize(data, change, ME, TOKENS, fallback);
+  humanize(data, change, ME, TOKENS, fallback, "zh-TW");
 
 describe("formatAmount", () => {
   it("wei 轉成人看的數字", () => {
@@ -144,6 +144,7 @@ describe("整批授權", () => {
       ME,
       TOKENS,
       `ERC1155 ApprovalForAll: ${STRANGER} approved for ${NFT}`,
+      "zh-TW",
     );
 
   it("講清楚範圍是整個系列，不是某一個", () => {
@@ -394,5 +395,21 @@ describe("查不到代幣資訊時", () => {
     );
     expect(out.text).not.toMatch(/\d{15,}/);
     expect(out.text).toContain("換算不了");
+  });
+  it("locale 決定查不到代幣時的語言：en 講英文、zh-TW 講中文", () => {
+    const en = humanize(
+      { operation: "transfer", token: UNKNOWN, from: STRANGER, to: ME, amount: "42" },
+      unknownEvent,
+      ME,
+      TOKENS,
+      "FALLBACK",
+      "en",
+    );
+    expect(en.text).toContain("42 minimal units");
+    expect(en.text).not.toMatch(/[\u4e00-\u9fff]/);
+
+    const tw = h({ operation: "transfer", token: UNKNOWN, from: STRANGER, to: ME, amount: "42" });
+    expect(tw.text).toContain("42 個最小單位");
+    expect(tw.text).toContain("換算不了");
   });
 });

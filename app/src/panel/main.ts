@@ -16,6 +16,8 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { EvidencePanelView } from "../contract.js";
 import { handoffUrl, MONAD_CHAIN_ID } from "../handoff.js";
 import { esc, renderBody, renderFooter, type Tab } from "./render.js";
+import { t, type Locale } from "./i18n.js";
+import { LOGOMARK_SVG } from "./brand.js";
 
 /**
  * 建置時的後備網址。**正常情況不該用到它。**
@@ -97,21 +99,19 @@ function structuredOf(result: CallToolResult): Structured {
 function renderHandoffFallback(): string {
   const url = state.handoffUrl;
   if (url === null) return "";
+  const locale: Locale = state.view?.locale ?? "en";
   const blocked = state.handoffKind === "blocked";
-  const lead = blocked
-    ? `複製下面整串網址，貼到瀏覽器開啟，在你自己的錢包裡完成簽名。`
-    : `瀏覽器沒跳出來的話，用下面這串網址自己開。`;
+  const lead = blocked ? t(locale, "handoff_copy_lead") : t(locale, "handoff_open_lead");
   return `
     <div class="handoff-fallback" data-kind="${esc(state.handoffKind ?? "")}">
       <p class="note">${esc(state.handoffNote ?? "")}${blocked ? "" : ""}</p>
-      <p class="note">${lead}那一頁會顯示同一串指紋，跟上面對一下。</p>
+      <p class="note">${lead}${t(locale, "handoff_note")}</p>
       <textarea class="handoff-url" readonly rows="3">${esc(url)}</textarea>
       <div class="handoff-actions">
-        <button class="copy-handoff">複製網址</button>
-        <a class="open-handoff" href="${esc(url)}" target="_blank" rel="noopener noreferrer">直接開啟</a>
+        <button class="copy-handoff">${t(locale, "handoff_copy_btn")}</button>
+        <a class="open-handoff" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${t(locale, "handoff_open_btn")}</a>
       </div>
-      <p class="note tiny">「直接開啟」走的是一般連結，跟 host 的 openLink 是兩套機制，
-        有時候這條通得了。沒反應就用複製那條。</p>
+      <p class="note tiny">${t(locale, "handoff_note_tiny")}</p>
     </div>`;
 }
 
@@ -153,21 +153,22 @@ function paint(): void {
     return;
   }
   if (state.view === null) {
-    root.innerHTML = `<div class="panel"><p class="loading">正在對 Monad 主網模擬這筆交易…</p></div>`;
+    root.innerHTML = `<div class="panel"><p class="loading">${t("en", "loading")}</p></div>`;
     return;
   }
 
   const view = state.view;
+  const locale: Locale = view.locale;
   root.innerHTML = `
     <div class="panel">
       <div class="p-head">
-        <span class="mark">證</span>
-        <span class="name">Vigil · 簽名前檢查</span>
-        <span class="src"><span class="live"></span>Monad 主網模擬</span>
+        <span class="mark">${LOGOMARK_SVG}</span>
+        <span class="name">${t(locale, "panel_name")}</span>
+        <span class="src"><span class="live"></span>${t(locale, "panel_source")}</span>
       </div>
       <div class="tabs" role="tablist">
-        <button role="tab" data-tab="summary" aria-selected="${state.tab === "summary"}">結論</button>
-        <button role="tab" data-tab="raw" aria-selected="${state.tab === "raw"}">原始資料</button>
+        <button role="tab" data-tab="summary" aria-selected="${state.tab === "summary"}">${t(locale, "tab_summary")}</button>
+        <button role="tab" data-tab="raw" aria-selected="${state.tab === "raw"}">${t(locale, "tab_raw")}</button>
       </div>
       <div class="p-body" data-enter="${state.entered ? "0" : "1"}">${renderBody(view, {
         tab: state.tab,
@@ -203,10 +204,11 @@ function paint(): void {
   const sign = root.querySelector<HTMLButtonElement>(".sign");
   sign?.addEventListener("click", () => {
     if (!view.signable) return;
+    const locale: Locale = view.locale;
     const base = state.signPageUrl;
     if (base === null || base === "") {
       // 開一個壞掉的連結比講清楚更糟：使用者會以為自己做錯了
-      state.error = "這個 server 沒有告訴面板簽名頁在哪裡，交接不出去。";
+      state.error = t(locale, "err_no_signpage");
       paint();
       return;
     }
@@ -217,14 +219,15 @@ function paint(): void {
     const url = handoffUrl(base, {
       chainId: MONAD_CHAIN_ID,
       transactions: view.transactions,
-      summary: view.intent?.text ?? "這筆交易",
+      summary: view.intent?.text ?? t(locale, "tx_fallback"),
       fingerprint: view.fingerprint,
+      locale,
     });
 
     // 按鍵一定要當場有反應。沒有的話使用者分不出是自己沒按到、還是壞了、
     // 還是正在處理 —— 這正是 08-04 實機測到的那個「按了沒反應」。
     sign.disabled = true;
-    sign.textContent = "開啟簽名頁…";
+    sign.textContent = t(locale, "sign_opening");
 
     // openLink 被拒絕時回 isError 而不是丟例外，只有 timeout / 斷線才 throw。
     // 兩種都要接。
@@ -237,12 +240,12 @@ function paint(): void {
         const result = await app.openLink({ url });
         if (result.isError === true) {
           const message = typeof result.message === "string" ? result.message : null;
-          showHandoffFallback(url, message ?? "這個 host 不允許面板直接開連結。", "blocked");
+          showHandoffFallback(url, message ?? t(locale, "handoff_blocked"), "blocked");
         } else {
-          showHandoffFallback(url, "已請這個 host 開啟簽名頁。", "opened");
+          showHandoffFallback(url, t(locale, "handoff_opened"), "opened");
         }
       } catch (error) {
-        showHandoffFallback(url, `開連結失敗：${String(error)}`, "blocked");
+        showHandoffFallback(url, t(locale, "handoff_open_failed", { error: String(error) }), "blocked");
       }
     })();
   });
