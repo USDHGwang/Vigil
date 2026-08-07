@@ -302,26 +302,42 @@ export function createServer(options: ServerOptions = {}): McpServer {
       const { registry } = await getStack();
       const coordinates = registry.discover().filter((c) => c.kind === "capability");
       const stubs = registry.load(coordinates);
-      const lines = stubs.map((s) => {
+
+      // 參數提示：補 schema 描述沒講、但 agent 準備交易時會卡住的事。
+      // 兩條都是實測踩過的坑：
+      //   - kuru 的 tokenIn/tokenOut 只收地址或字面量 "native"（Moss TokenReference），
+      //     agent 用 0xEeee.../WMON 地址去猜兩條路都會爆
+      //   - receiver 可省略、預設發送帳戶（pipeline 的 receiverDefault 邏輯），
+      //     agent 不知道會卡在「receiver 填什麼」
+      const hintOf = (k: string): string => {
+        if (k === "tokenIn" || k === "tokenOut") return t(locale, "tool_discover_native_hint");
+        if (k === "receiver") return t(locale, "tool_discover_receiver_hint");
+        return "";
+      };
+      const lineOf = (s: (typeof stubs)[number]): string => {
         const params = Object.entries(s.params)
-          .map(([k, v]) => {
-            // kuru 的 tokenIn/tokenOut 只收地址或字面量 "native"（Moss TokenReference）。
-            // discover 的描述沒講，agent 會用 0xEeee.../WMON 地址去猜，兩條路都會爆。
-            // 這裡補上提示，讓 agent 直接用 native 字面量走單腿市場。
-            const hint =
-              k === "tokenIn" || k === "tokenOut"
-                ? t(locale, "tool_discover_native_hint")
-                : "";
-            return `${k} (${v.description}${hint})`;
-          })
+          .map(([k, v]) => `${k} (${v.description}${hintOf(k)})`)
           .join("; ");
-        return `${s.protocol}.${s.method} — ${s.intent}${params ? `  [${params}]` : ""}`;
-      });
+        return `  ${s.method} — ${s.intent}${params ? `  [${params}]` : ""}`;
+      };
+
+      // 按 protocol 分組：agent 讀「shmonad 底下有什麼」比 10 條平鋪好消化。
+      // Map 保插入序，組序跟 registry 的 discover 一致。
+      const byProtocol = new Map<string, string[]>();
+      for (const s of stubs) {
+        const lines = byProtocol.get(s.protocol) ?? [];
+        lines.push(lineOf(s));
+        byProtocol.set(s.protocol, lines);
+      }
+      const body = [...byProtocol.entries()]
+        .map(([protocol, lines]) => `${protocol}\n${lines.join("\n")}`)
+        .join("\n\n");
+
       return {
         content: [
           {
             type: "text",
-            text: `${t(locale, "tool_discover_title", { n: String(stubs.length) })}\n\n${lines.join("\n")}`,
+            text: `${t(locale, "tool_discover_title", { n: String(stubs.length) })}\n\n${body}`,
           },
         ],
         structuredContent: { operations: stubs },

@@ -302,9 +302,20 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
 
     const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
     // 人話版：要能看到質押這項操作；en 對話不能混中文
-    expect(text).toContain("shmonad.stake");
     expect(text).toContain("Operations this server can simulate on Monad");
     expect(text).not.toMatch(/[\u4e00-\u9fff]/);
+
+    // 按 protocol 分組：組標題 + 縮排的 method 行
+    expect(text).toContain("shmonad\n");
+    expect(text).toMatch(/shmonad\n\s{2}stake —/);
+
+    // kuru.swap 的 token 參數要提示 native 字面量（agent 會用 0xEeee/WMON 猜，兩條都爆）
+    // overlay 在 text 版（agent 主要讀這個）
+    expect(text).toContain("kuru");
+    expect(text).toContain('literal "native"');
+
+    // receiver 可省略、預設發送帳戶（pipeline 的 receiverDefault）——agent 不知道會卡住
+    expect(text).toContain("optional — defaults to the sending account");
 
     // 結構化版：agent 要靠它準備交易，參數描述必須在
     const { operations } = result.structuredContent as {
@@ -313,11 +324,6 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     const stake = operations.find((o) => o.protocol === "shmonad" && o.method === "stake");
     expect(stake).toBeDefined();
     expect(Object.keys(stake?.params ?? {})).toContain("amount");
-
-    // kuru.swap 的 token 參數要提示 native 字面量（agent 會用 0xEeee/WMON 猜，兩條都爆）
-    // overlay 在 text 版（agent 主要讀這個）
-    expect(text).toContain("kuru.swap");
-    expect(text).toContain('literal "native"');
 
     // discover 只列 capability：讀取類操作不該出現
     const balanceOf = operations.find((o) => o.method === "balanceOf");

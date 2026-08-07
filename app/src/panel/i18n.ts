@@ -166,6 +166,7 @@ const en: Dict = {
   // locale 由 agent 從對話語言決定，default en——與 preview_transaction 同一套機制。
   tool_discover_title: "Operations this server can simulate on Monad ({n}):",
   tool_discover_native_hint: ' (token address, or the literal "native" for native MON)',
+  tool_discover_receiver_hint: " (optional — defaults to the sending account)",
   tool_recent_empty: "No transactions have been previewed in this session yet.",
   tool_recent_agent_said: "What the agent said you asked: {request}",
   tool_recent_effect: "Effect: {summary}",
@@ -328,6 +329,7 @@ const zhCN: Dict = {
 
   tool_discover_title: "这个服务器可以在 Monad 上模拟的操作（{n}）：",
   tool_discover_native_hint: '（代币地址，或字面量 "native" 表示原生 MON）',
+  tool_discover_receiver_hint: "（可省略，默认为发送账户）",
   tool_recent_empty: "这个会话还没有预览过任何交易。",
   tool_recent_agent_said: "agent 说你要求的：{request}",
   tool_recent_effect: "效果：{summary}",
@@ -489,6 +491,7 @@ const zhTW: Dict = {
 
   tool_discover_title: "這個伺服器可以在 Monad 上模擬的操作（{n}）：",
   tool_discover_native_hint: '（代幣地址，或字面量 "native" 表示原生 MON）',
+  tool_discover_receiver_hint: "（可省略，預設為發送帳戶）",
   tool_recent_empty: "這個 session 還沒有預覽過任何交易。",
   tool_recent_agent_said: "agent 說你要求的：{request}",
   tool_recent_effect: "效果：{summary}",
