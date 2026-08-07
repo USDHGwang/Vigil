@@ -13,7 +13,7 @@
 
 [English](README.md) | **繁體中文**
 
-[**安裝**](app/MCP-SETUP.md) · [**進度與決定紀錄**](STATUS.md) · [**賽道盤點**](docs/research-landscape.md)
+[**安裝**](app/MCP-SETUP.md) · [**設計簡報**](app/DESIGN-BRIEF.md)
 
 > 拉丁文 *vigil*：守夜人。看見、回報，不替你決定。
 
@@ -97,7 +97,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | **簽名前** | Fireblocks、Turnkey、Privy、Dfns、BitGo、MoonPay PayBox、Crossmint | MetaMask+Blockaid、Phantom+Blowfish、Coinbase、Trust、Rabby、Hexagate、MetaMask Agent Wallet | **空的** |
 | **執行後** | — | — | Cobo Argus `postExecCheck`、MetaMask Advanced Permissions |
 
-零件都存在，沒有人在簽名前這一格組起來。完整調研與來源見 [docs/research-landscape.md](docs/research-landscape.md)。
+零件都存在，沒有人在簽名前這一格組起來。
 
 **而這一格正在變得更重要。** MetaMask Advanced Permissions（ERC-7715）已經在 Monad
 主網[上線](https://docs.metamask.io/smart-accounts-kit/get-started/supported-networks/)：使用者授權一次之後，agent 執行時**不再有錢包彈窗**。
@@ -183,7 +183,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
 | 部署到雲端 endpoint | 未開始，本機已完整可用 |
 
-`pnpm check`：**276 tests**，含對 Monad 主網的實跑。詳細狀態、決定紀錄、風險見 [STATUS.md](STATUS.md)。
+`pnpm check`：**276 tests**，含對 Monad 主網的實跑。詳細狀態、決定紀錄、風險維護在內部文件。
 
 ### 自己驗過的（非文件轉述）
 
@@ -217,17 +217,12 @@ Monad Foundation 的 DevRel 工程師，但專案掛在個人帳號下，README 
 
 本專案作者寫的 shMONAD protocol adapter 已開 PR 進 Moss upstream（[#128](https://github.com/nishuzumi/moss/pull/128)）。
 
-我們對 Moss 的曝險分三層，哪一層擋得住哪一層擋不住，寫在 [STATUS.md](STATUS.md)。
+我們對 Moss 的曝險分三層，哪一層擋得住哪一層擋不住，分析維護在內部文件。
 
 ## 文件
 
 | 檔案 | 內容 |
 |---|---|
-| [STATUS.md](STATUS.md) | 進度、決定紀錄、查證事實、風險、檔案地圖 |
-| [product-brief.md](product-brief.md) | 產品定義 |
-| [2026-07-28-problem.md](2026-07-28-problem.md) | 問題陳述與證據 |
-| [docs/research-landscape.md](docs/research-landscape.md) | 賽道盤點，六方向調研 |
-| [team-intro.md](team-intro.md) | 給團隊的白話說明 |
 | [app/MCP-SETUP.md](app/MCP-SETUP.md) | 安裝與接線 |
 | [app/DESIGN-BRIEF.md](app/DESIGN-BRIEF.md) | 給做介面的人 |
 

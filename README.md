@@ -12,7 +12,7 @@
 
 **English** | [繁體中文](README.zh-TW.md)
 
-[**Setup**](app/MCP-SETUP.md) · [**Status and decisions**](STATUS.md) · [**Landscape research**](docs/research-landscape.md)
+[**Setup**](app/MCP-SETUP.md) · [**Design brief**](app/DESIGN-BRIEF.md)
 
 > Latin *vigil*: a watchman. Sees, reports, does not decide for you.
 
@@ -99,7 +99,7 @@ ERC-7730 clear signing solves readability. Its intent is a static per-function d
 | **Before signing** | Fireblocks, Turnkey, Privy, Dfns, BitGo, MoonPay PayBox, Crossmint | MetaMask+Blockaid, Phantom+Blowfish, Coinbase, Trust, Rabby, Hexagate, MetaMask Agent Wallet | **empty** |
 | **After execution** | — | — | Cobo Argus `postExecCheck`, MetaMask Advanced Permissions |
 
-The parts all exist. Nobody has assembled them in the pre-signing cell. Full research and sources in [docs/research-landscape.md](docs/research-landscape.md).
+The parts all exist. Nobody has assembled them in the pre-signing cell.
 
 That cell is getting more important. MetaMask Advanced Permissions (ERC-7715) is [live on Monad mainnet](https://docs.metamask.io/smart-accounts-kit/get-started/supported-networks/). Once a user grants a permission, the agent executes with no wallet popup. When the popup goes away, so does the last place a human sees the transaction.
 
@@ -192,7 +192,7 @@ The signing page also compares the wallet's current account against the sender o
 - **The signing page sends the first transaction only.** It says so when a batch has more. The staking demo is a single transaction, so the demo is unaffected.
 - **The wallet leg has not been tested end to end.** `eth_requestAccounts` through `eth_sendTransaction` needs a browser with a real wallet, which the dev environment does not have.
 
-Details, decision log, and risks are in [STATUS.md](STATUS.md) (Traditional Chinese).
+Details, decision log, and risks are tracked in our internal docs (Traditional Chinese).
 
 ### Verified first hand, not quoted from docs
 
@@ -223,16 +223,12 @@ The source is vendored in [`app/vendor/moss/`](app/vendor/moss/README.md), pinne
 
 The shMONAD protocol adapter in this project was written by the author and is open as a PR against Moss upstream ([#128](https://github.com/nishuzumi/moss/pull/128)).
 
-Our exposure to Moss splits into three layers. Which ones we can catch and which we cannot is written out in [STATUS.md](STATUS.md).
+Our exposure to Moss splits into three layers. Which ones we can catch and which we cannot is analyzed in our internal docs.
 
 ## Docs
 
 | File | Contents |
 |---|---|
-| [STATUS.md](STATUS.md) | Progress, decision log, verified facts, risks, file map |
-| [product-brief.md](product-brief.md) | Product definition |
-| [2026-07-28-problem.md](2026-07-28-problem.md) | Problem statement and evidence |
-| [docs/research-landscape.md](docs/research-landscape.md) | Landscape research, six directions |
 | [app/MCP-SETUP.md](app/MCP-SETUP.md) | Setup and wiring |
 | [app/DESIGN-BRIEF.md](app/DESIGN-BRIEF.md) | For whoever builds the interface |
 

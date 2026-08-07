@@ -35,6 +35,8 @@ cancel_ghost_run.py
 check_pages.py
 dispatch_pages.py
 tunnel_launcher.py
+tunnel_mcp.py
 tunnel_url.txt
+mcp_tunnel_url.txt
 .vercel
 .env*
