@@ -13,7 +13,7 @@
 
 [English](README.md) | **繁體中文**
 
-[**安裝**](app/MCP-SETUP.md) · [**設計簡報**](app/DESIGN-BRIEF.md)
+[**安裝**](app/MCP-SETUP.md)
 
 > 拉丁文 *vigil*：守夜人。看見、回報，不替你決定。
 
@@ -224,7 +224,6 @@ Monad Foundation 的 DevRel 工程師，但專案掛在個人帳號下，README 
 | 檔案 | 內容 |
 |---|---|
 | [app/MCP-SETUP.md](app/MCP-SETUP.md) | 安裝與接線 |
-| [app/DESIGN-BRIEF.md](app/DESIGN-BRIEF.md) | 給做介面的人 |
 
 ## 授權
 

@@ -12,7 +12,7 @@
 
 **English** | [繁體中文](README.zh-TW.md)
 
-[**Setup**](app/MCP-SETUP.md) · [**Design brief**](app/DESIGN-BRIEF.md)
+[**Setup**](app/MCP-SETUP.md)
 
 > Latin *vigil*: a watchman. Sees, reports, does not decide for you.
 
@@ -242,7 +242,6 @@ Our exposure to Moss splits into three layers. Which ones we can catch and which
 | File | Contents |
 |---|---|
 | [app/MCP-SETUP.md](app/MCP-SETUP.md) | Setup and wiring |
-| [app/DESIGN-BRIEF.md](app/DESIGN-BRIEF.md) | For whoever builds the interface |
 
 Most documents are in Traditional Chinese.
 
