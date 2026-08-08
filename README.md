@@ -1,11 +1,6 @@
-<!--
-  Replace OWNER/REPO in the badge URLs if the repository moves.
-  Currently pointing at USDHGwang/vigil.
--->
-
 # Vigil
 
-[![CI](https://github.com/USDHGwang/vigil/actions/workflows/ci.yml/badge.svg)](https://github.com/USDHGwang/vigil/actions/workflows/ci.yml)
+[![CI](https://github.com/USDHGwang/Vigil/actions/workflows/ci.yml/badge.svg)](https://github.com/USDHGwang/Vigil/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Monad](https://img.shields.io/badge/Monad-mainnet%20143-6E54FF)](https://www.monad.xyz/)
 [![MCP](https://img.shields.io/badge/MCP-Apps-000000)](https://modelcontextprotocol.io/)

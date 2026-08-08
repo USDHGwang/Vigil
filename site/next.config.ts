@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
   // 本機 review 用：允許 cloudflared quick tunnel 來源載入 dev 資源（生產 build 不受影響）
   allowedDevOrigins: ["*.trycloudflare.com"],
   ...(basePath === "" ? {} : { basePath, assetPrefix: basePath }),
-  // 子路徑託管時路徑要有結尾斜線，不然 /sign 會被導去別的地方
+  // 子路徑託管時路徑要有結尾斜線，不然 /docs 這類路由會被導去別的地方。
+  // （簽名頁已經不從 Pages 出，只在 worker 的 /sign，見 .github/workflows/pages.yml）
   trailingSlash: true,
 };
 

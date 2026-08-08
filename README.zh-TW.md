@@ -1,12 +1,6 @@
-<!--
-  badge 的 OWNER/REPO 要換成實際的 GitHub 位置。
-  這裡先填最可能的 USDHGwang/vigil，repo 名不同就改這兩行。
-  推上去之前 CI badge 會顯示 "not found"，那是正常的。
--->
-
 # Vigil
 
-[![CI](https://github.com/USDHGwang/vigil/actions/workflows/ci.yml/badge.svg)](https://github.com/USDHGwang/vigil/actions/workflows/ci.yml)
+[![CI](https://github.com/USDHGwang/Vigil/actions/workflows/ci.yml/badge.svg)](https://github.com/USDHGwang/Vigil/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Monad](https://img.shields.io/badge/Monad-mainnet%20143-6E54FF)](https://www.monad.xyz/)
 [![MCP](https://img.shields.io/badge/MCP-Apps-000000)](https://modelcontextprotocol.io/)
