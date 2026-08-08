@@ -121,8 +121,9 @@ describe.skipIf(LIVE)("對抗性：收受方給錯人（連外）", () => {
     const text = textOf(result);
     // ① agent 轉述的原話原樣在
     expect(text).toContain("幫我質押 0.25 MON 給我自己的地址");
-    // ② 實際收款人也在（縮寫或全寫都算），不能只顯示金額
-    expect(text.toLowerCase()).toMatch(/0x9f2ca7/);
+    // ② 實際收款人也在（面板縮寫成 0x9f2c…a41b，前後都要對上），不能只顯示金額
+    expect(text.toLowerCase()).toMatch(/0x9f2c/);
+    expect(text.toLowerCase()).toMatch(/a41b/);
     // ③ 面板必須說明機器沒有驗這件事，不能讓人以為已經比對過
     expect(text).toMatch(/你自己|自己看|自己對/);
   });
