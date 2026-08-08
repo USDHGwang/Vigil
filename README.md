@@ -94,15 +94,7 @@ That cell is getting more important. MetaMask Advanced Permissions (ERC-7715) is
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A["You say something"] --> B["Agent restates it and calls preview_transaction"]
-    B --> C["Moss builds the unsigned transaction"]
-    C --> D["debug_traceCall against Monad mainnet"]
-    D --> E["Coverage check + five structural rules + real balance check"]
-    E --> F["Panel: what the agent says you asked for, next to what happens on-chain"]
-    F --> G["You compare — then sign in your own wallet"]
-```
+![How it works](assets/flow-en.png)
 
 Step ⑤ is a person's job, not the machine's. **Step ④ compares the transaction against the operation the agent called, not against the sentence the user said.** Those are different claims, and only the first one is machine-checkable — see [Two layers](#two-layers-of-comparison) below.
 

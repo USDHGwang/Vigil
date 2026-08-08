@@ -74,15 +74,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 
 ## 做法
 
-```mermaid
-flowchart LR
-    A["你講了一句話"] --> B["agent 轉述它、呼叫 preview_transaction"]
-    B --> C["Moss 建出未簽交易"]
-    C --> D["debug_traceCall 打 Monad 主網"]
-    D --> E["覆蓋檢查 + 五條結構規則 + 真實餘額檢查"]
-    E --> F["面板：agent 說你要求的，與鏈上會發生的並排"]
-    F --> G["你自己比對——然後在錢包簽名"]
-```
+![做法](assets/flow-zh.png)
 
 ⑤ 是人的工作不是機器的。**④ 比的是「交易」對「agent 呼叫的操作」，不是對「使用者說的那句話」。**
 這是兩個不同的宣稱，只有前者機器驗得了，見下面的[兩層比對](#兩層比對)。
