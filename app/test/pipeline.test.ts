@@ -259,7 +259,15 @@ describe("structuralVerdict", () => {
     expect(verdict.reason).toContain("無上限");
   });
 
-  it("有上限的授權不會被誤報成需要確認", () => {
+  /**
+   * 有上限的授權不是 conflict（沒有「多出來」的東西），但也不是 match。
+   *
+   * 這裡的 statedRequest 說「授權 1000 個給它」，看起來使用者知情——但那句話
+   * 跟 spender 參數都是 agent 給的，機器沒有辦法分辨它是真的轉述還是被注入後
+   * 編出來的。partial 不擋簽名，只是要求人看一眼；把它當 match 才是宣稱了
+   * 一件沒被驗證的事。
+   */
+  it("有上限的授權是 partial：不擋簽名，但不給綠勾", () => {
     const request: SimulateRequest = {
       account: ACCOUNT,
       protocol: "erc20",
@@ -270,7 +278,9 @@ describe("structuralVerdict", () => {
     const verdict = structuralVerdict(request, receiptWith("approve"), [
       approval(ACCOUNT, STRANGER, 1000n),
     ], "zh-TW");
-    expect(verdict.kind).toBe("match");
+    expect(verdict.kind).toBe("partial");
+    // 不是 mismatch —— mismatch 會擋掉簽名，而這裡沒有任何「多出來」的東西
+    expect(verdict.kind).not.toBe("mismatch");
   });
 
   // 先前 method 含 approve/permit/allow 就整段跳過 rule 1，「有上限、但給錯人」
