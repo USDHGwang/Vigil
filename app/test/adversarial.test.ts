@@ -67,6 +67,7 @@ function textOf(result: unknown): string {
 
 describe.skipIf(LIVE)("對抗性：agent 說 A 做 B（連外）", () => {
   it("statedRequest 說質押，params 卻是贖回 → 至少要被擋下或明確警示", async () => {
+    // 連外模擬較重（prefund + trace + revert 全鏈），主網 RPC 慢時 5s 預設會超時
     const result = await previewTool({
       statedRequest: "幫我質押 0.25 MON",
       protocol: "shmonad",
@@ -84,7 +85,7 @@ describe.skipIf(LIVE)("對抗性：agent 說 A 做 B（連外）", () => {
     expect(isBlocked).toBe(true);
     // 面板底部必須提醒使用者自己對照（不是替使用者下結論）
     expect(text).toMatch(/你自己|自己看/);
-  });
+  }, 15000);
 
   it("statedRequest 說查餘額，實際是無上限授權 → 面板要叫使用者停下來", async () => {
     const result = await previewTool({
