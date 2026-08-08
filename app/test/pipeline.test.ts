@@ -188,13 +188,44 @@ describe("structuralVerdict", () => {
     expect(verdict.conflicts[0]).toContain("無上限授權");
   });
 
-  it("授權對象在意圖裡出現過就不算多出來", () => {
+  /**
+   * 對象在參數裡就不算「多出來」——那是 rule 1 的判斷，維持不變。
+   *
+   * 但它也不能是 match。參數是 agent 給的，被注入的 agent 只要把攻擊者填進
+   * spender、額度壓在無上限門檻以下，rule 1 與 rule 4 就都不觸發。機器在這裡
+   * 驗到的只有「交易對得上呼叫的操作」，撐不起一個綠勾。
+   */
+  it("授權對象在意圖裡出現過 → 不是 conflict，但也不是 match", () => {
     const request: SimulateRequest = {
       ...stakeRequest,
       params: { amount: "0.25", receiver: ACCOUNT, spender: STRANGER },
     };
     const verdict = structuralVerdict(request, receiptWith("stake"), [
       approval(ACCOUNT, STRANGER, 1000n),
+    ], "zh-TW");
+    expect(verdict.kind).toBe("partial");
+    if (verdict.kind !== "partial") throw new Error("unreachable");
+    expect(verdict.reason).toContain("agent");
+  });
+
+  it("額度壓在無上限門檻以下也一樣，不會因為數字沒到門檻就變成綠勾", () => {
+    const request: SimulateRequest = {
+      ...stakeRequest,
+      params: { amount: "0.25", receiver: ACCOUNT, spender: STRANGER },
+    };
+    const verdict = structuralVerdict(request, receiptWith("stake"), [
+      approval(ACCOUNT, STRANGER, 2n ** 96n - 2n),
+    ], "zh-TW");
+    expect(verdict.kind).toBe("partial");
+  });
+
+  it("授權給自己是 no-op，不用打斷使用者", () => {
+    const request: SimulateRequest = {
+      ...stakeRequest,
+      params: { amount: "0.25", receiver: ACCOUNT, spender: ACCOUNT },
+    };
+    const verdict = structuralVerdict(request, receiptWith("stake"), [
+      approval(ACCOUNT, ACCOUNT, 1000n),
     ], "zh-TW");
     expect(verdict.kind).toBe("match");
   });
