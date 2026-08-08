@@ -100,7 +100,7 @@ Step ⑤ is a person's job, not the machine's. **Step ④ compares the transacti
 
 Hosts that support MCP Apps render step ⑤ as a panel; CLI agents get an equivalent text panel with the same content.
 
-Inside step ④, `verifyReceiptCoverage` is an integrity check, not the intent comparison: it verifies the report and the raw changes correspond one to one, equal count with object identity per item. That blocks omissions, duplicates, and invented entries. The intent comparison is the five rules below.
+Inside step ④, `verifyReceiptCoverage` is an integrity check, not the intent comparison: it verifies the report and the raw changes correspond one to one, equal count with object identity per item. That blocks omissions, duplicates, and invented entries. The intent comparison is the six rules below.
 
 ### Two layers of comparison
 
@@ -111,13 +111,22 @@ Inside step ④, `verifyReceiptCoverage` is an integrity check, not the intent c
 
 The semantic layer is not handed to an LLM. That LLM reads the same content and can be injected the same way, so trust would loop back to where it started. The two are placed side by side for a person to read instead.
 
-The structural layer has five rules. **None of them needs per-protocol knowledge:**
+The structural layer has six rules. **None of them needs per-protocol knowledge:**
 
 1. An approval to a party the operation did not name (ERC-20 allowance, ERC-721 single-token approval, and NFT operator approval all count)
 2. The receipt operation does not match the method that was called
 3. Any `setApprovalForAll` (transfer rights over a whole collection, including tokens you get later)
 4. Any unlimited ERC-20 approval
-5. No protocol module means we say we cannot compare, rather than guess
+5. Any approval to an address other than the sender, whatever the amount
+6. No protocol module means we say we cannot compare, rather than guess
+
+Rule 5 exists because of what rule 1 cannot do. "A party the operation did not
+name" is decided against the parameters the agent supplied, and the agent is the
+party we assume is untrusted. An injected agent that puts the attacker in
+`spender` and keeps the amount under the unlimited threshold satisfies rules 1
+and 4 — so before rule 5, that case produced a green check. Handing your balance
+to someone else is now always at least "needs your review". It does not block
+signing, and approving yourself stays clean.
 
 ### How signing gets back to your wallet
 
@@ -131,18 +140,50 @@ Three decisions:
 
 The signing page also compares the wallet's current account against the sender of the transaction, and refuses if they differ.
 
+### The signing page assumes nothing about who sent you there
+
+The page is served from a fixed public URL and reads only the fragment, so
+anyone can build a link to it. The fingerprint comparison above does not help a
+user who never saw a panel — whoever wrote the link also wrote the fingerprint.
+
+So the page derives one thing for itself. It decodes the calldata locally with
+viem — `approve`, `setApprovalForAll`, `increaseAllowance`, ERC-2612 `permit`,
+Permit2, `transferFrom` — and prints what the bytes do, above the transaction
+details and independent of the description in the URL. Selectors it does not
+recognise say so, because silence reads as "safe". It carries no "mainnet
+simulation" badge: the panel earns that label by rendering a `debug_traceCall`
+result, this page simulates nothing. And it does not auto-open the wallet when
+the decode finds an approval, so a link click cannot turn straight into a
+signing prompt.
+
 ## Two boundaries we state plainly
 
 **This checks consistency, not safety.** If an agent honestly declares something harmful and then does exactly that, we correctly report consistent.
 
 **Both the stated intent and the account are unverified input from the agent.** The label reads "what the agent says you asked for", not "what you asked for". The account line says the address came from the agent and we did not verify it.
 
+**We only see transactions, and only through events.** Two limits follow from
+that, and neither is a bug we plan to fix in this shape:
+
+- *Signature phishing is out of range.* A `permit`, a Permit2 `PermitSingle`, a
+  Seaport order — the user signs typed data with `eth_signTypedData_v4` and no
+  transaction is ever built. There is nothing for this pipeline to receive or
+  simulate. The Scam Sniffer figure quoted above covers drainers of every kind,
+  including these; we do not claim to address that whole number.
+- *Approvals that do not emit events are invisible.* Moss reports a simulation
+  as events and native transfers, with no storage diff. A contract that writes
+  an allowance without emitting `Approval` is structurally undetectable to the
+  rules, and Permit2's on-chain approval uses a different event signature from
+  ERC-20's, so the event scan does not match it either. The signing page does
+  decode a Permit2 `approve` in the calldata, which covers the direct call but
+  not one nested inside another contract.
+
 ## Run it
 
 ```bash
 cd app
 pnpm install          # builds the vendored Moss, no external checkout needed
-pnpm check            # typecheck + 336 tests
+pnpm check            # typecheck + 355 tests (MOSS_SKIP_E2E=1 for the offline 329)
 pnpm demo             # the panel in your terminal, no host required
 pnpm demo injection   # the injected-instruction case
 pnpm build:all        # panel, signing page, preview page, MCP server
@@ -161,9 +202,10 @@ Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md) (Traditional 
 | MCP server with UI resource: MCP Apps panel (Claude Desktop, claude.ai) + ANSI text for CLI hosts | done |
 | Signing handoff to wallet — fingerprint on both pages, tamper paths tested in a browser, end to end verified on mainnet 2026-08-07 | done |
 | Wallet connect (so the account stops coming from the agent) | not started |
-| Hosted deployment — site live at [vigilapp.vercel.app](https://vigilapp.vercel.app); MCP server runs locally behind a tunnel, hosted deployment pending | partial |
+| Hosted deployment — marketing site at [vigilapp.vercel.app](https://vigilapp.vercel.app), signing page at [usdhgwang.github.io/Vigil/sign/](https://usdhgwang.github.io/Vigil/sign/) via `pages.yml`; the MCP server itself runs locally behind a tunnel | partial |
 
-`pnpm check`: **336 tests**, including live runs against Monad mainnet.
+`pnpm check`: **355 tests**. `MOSS_SKIP_E2E=1` runs 329 of them with no network
+at all; the rest simulate against Monad mainnet (no signing, no cost).
 
 ### Limitations
 
