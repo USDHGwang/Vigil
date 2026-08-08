@@ -86,11 +86,11 @@ cd Vigil/app && pnpm install && pnpm build:all`;
       logo: "claude",
       name: "Claude (web)",
       steps: a.stepsClaudeWeb,
-      code: "https://<endpoint>/mcp",
-      // 官方 deep link：modal 預填名稱；URL 留空讓使用者貼自己的
-      // endpoint（官網上線後加 &connectorUrl=…）
+      code: "https://vigil-mcp.usdhgwang.workers.dev/mcp",
+      // 官方 deep link：modal 預填名稱與正式 endpoint
+      // （connectorUrl 參數，官網已上線）
       link: {
-        href: "https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Vigil",
+        href: "https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Vigil&connectorUrl=https%3A%2F%2Fvigil-mcp.usdhgwang.workers.dev%2Fmcp",
         label: a.openInClaude,
       },
     },
@@ -99,7 +99,7 @@ cd Vigil/app && pnpm install && pnpm build:all`;
       logo: "openai",
       name: "ChatGPT",
       steps: a.stepsChatGPT,
-      code: "https://<endpoint>/mcp",
+      code: "https://vigil-mcp.usdhgwang.workers.dev/mcp",
       // ChatGPT 無 one-click deep link（官方限制），跳到 connectors 頁手動加
       link: { href: "https://chatgpt.com/connectors", label: a.openInGpt },
     },
