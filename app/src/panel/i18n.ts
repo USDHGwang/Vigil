@@ -160,6 +160,8 @@ const en: Dict = {
   conflict_operation: "Actually executes {actual}, you asked for {requested}",
   reason_batch_grant: "This transaction lets {who} move every token you own in {what}, including ones you get later, with no quantity limit. Confirm you really want this.",
   reason_unlimited: "This transaction gives {who} unlimited access — not just this time; it can move this token's balance from now on. Confirm you really want this.",
+  reason_approval_named:
+    "This transaction lets {who} move your {what}. That address came from the parameters the agent supplied, so the machine cannot tell whether you named it. Check it against what you actually asked for.",
   reason_no_module: "This protocol has no adapter, so only raw unparsed changes can be shown and no structural comparison is possible",
   handoff_copy_lead: "Copy the full URL below and open it in your browser to sign in your own wallet.",
   handoff_open_lead: "If the browser didn't open, open this URL yourself.",
@@ -342,6 +344,8 @@ const zhCN: Dict = {
   conflict_operation: "实际执行的是 {actual}，你要求的是 {requested}",
   reason_batch_grant: "这笔交易让 {who} 可以转走你在 {what} 这个系列里的每一个，包含你以后才拿到的，而且没有数量上限。确认你真的要这样做。",
   reason_unlimited: "这笔交易给 {who} 无上限的动用权，不只这一次，往后你这个代币的余额它都动得了。确认你真的要这样做。",
+  reason_approval_named:
+    "这笔交易让 {who} 可以动你的 {what}。那个地址是 agent 传进来的参数，机器判断不了你有没有指定过它。请自己对照一下你实际要求的是什么。",
   reason_no_module: "这个协议没有解读模块，只能显示未经解读的原始变动，无法做结构比对",
   handoff_copy_lead: "复制下面整串网址，贴到浏览器打开，在你自己的钱包里完成签名。",
   handoff_open_lead: "浏览器没跳出来的话，用下面这串网址自己开。",
@@ -520,6 +524,8 @@ const zhTW: Dict = {
   conflict_operation: "實際執行的是 {actual}，你要求的是 {requested}",
   reason_batch_grant: "這筆交易讓 {who} 可以轉走你在 {what} 這個系列裡的每一個，包含你以後才拿到的，而且沒有數量上限。確認你真的要這樣做。",
   reason_unlimited: "這筆交易給 {who} 無上限的動用權，不只這一次，往後你這個代幣的餘額它都動得了。確認你真的要這樣做。",
+  reason_approval_named:
+    "這筆交易讓 {who} 可以動你的 {what}。那個地址是 agent 傳進來的參數，機器判斷不了你有沒有指定過它。請自己對照一下你實際要求的是什麼。",
   reason_no_module: "這個協議沒有解讀模組，只能顯示未經解讀的原始變動，無法做結構比對",
   handoff_copy_lead: "複製下面整串網址，貼到瀏覽器開啟，在你自己的錢包裡完成簽名。",
   handoff_open_lead: "瀏覽器沒跳出來的話，用下面這串網址自己開。",
