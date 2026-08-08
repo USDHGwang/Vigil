@@ -87,16 +87,13 @@ export default function MechanismSteps({ steps }: { steps: readonly Step[] }) {
                 "radial-gradient(280px circle at var(--mx,50%) var(--my,50%), rgba(120,160,255,0.18), transparent 70%)",
             }}
           />
-          <span className="tag mb-4 block text-[var(--color-ink-3)] transition-colors duration-300 group-hover:text-[#8ab4ff]">
-            {s.n}
-          </span>
           <h3
             className="text-[18px] font-medium tracking-[-0.01em]"
             style={{ color: i === steps.length - 1 ? "var(--color-match)" : "var(--color-ink-2)" }}
           >
             {s.title}
           </h3>
-          <p className="mt-3 text-[15px] font-light leading-[1.65] text-[var(--color-ink-2)]">
+          <p className="mt-3 text-[15px] font-normal leading-[1.65] text-[var(--color-ink-2)]">
             {s.body}
           </p>
         </div>

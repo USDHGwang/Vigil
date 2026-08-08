@@ -6,7 +6,6 @@
  */
 
 import Starfield from "@/components/Starfield";
-import ParticleCanvas from "@/components/ParticleCanvas";
 import Nav from "@/components/Nav";
 import Reveal from "@/components/Reveal";
 import MechanismSteps from "@/components/MechanismSteps";
@@ -33,7 +32,6 @@ export default function HomeContent() {
       <ScrollReset />
       <Daybreak />
       <Starfield />
-      <ParticleCanvas />
       <Nav />
 
       <LocaleTransition>
@@ -79,7 +77,7 @@ export default function HomeContent() {
           {/* 往下捲的提示 — 獨立佔位在內容下方，矮 viewport 不與內容重疊 */}
           <Reveal delay={650}>
             <div className="pointer-events-none flex flex-col items-center gap-2.5 pb-1">
-              <span className="font-mono text-[9px] tracking-[0.2em] text-[var(--color-ink-3)]">
+              <span className="font-mono text-[10px] tracking-[0.14em] text-[var(--color-ink-3)]">
                 SCROLL
               </span>
               <span className="relative h-8 w-px overflow-hidden bg-[rgba(255,255,255,0.12)]">
@@ -96,7 +94,7 @@ export default function HomeContent() {
               <p className="tag mb-6">{t.gapTag}</p>
             </Reveal>
             <Reveal delay={100}>
-              <h2 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
+              <h2 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
                 {t.gapTitle}
               </h2>
             </Reveal>
@@ -115,7 +113,7 @@ export default function HomeContent() {
               <p className="tag mb-6">{t.howTag}</p>
             </Reveal>
             <Reveal delay={100}>
-              <h2 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
+              <h2 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
                 {t.howTitle}
               </h2>
             </Reveal>
@@ -130,7 +128,7 @@ export default function HomeContent() {
               <p className="tag mb-6">{t.archTag}</p>
             </Reveal>
             <Reveal delay={100}>
-              <h2 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
+              <h2 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
                 {t.archTitle}
               </h2>
             </Reveal>
@@ -145,7 +143,7 @@ export default function HomeContent() {
               <p className="tag mb-6">{t.evidenceTag}</p>
             </Reveal>
             <Reveal delay={100}>
-              <h2 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
+              <h2 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
                 {t.evidenceTitle}
               </h2>
             </Reveal>
@@ -170,7 +168,7 @@ export default function HomeContent() {
         <section className="px-6 py-32 sm:px-10">
           <div className="mx-auto w-full max-w-5xl">
             <Reveal>
-              <h2 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-6xl">
+              <h2 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-6xl">
                 {t.ctaLine1}
                 <br />
                 <span className="text-[var(--color-ink-3)]">{t.ctaLine2}</span>
@@ -189,7 +187,7 @@ export default function HomeContent() {
         {/* ======================= FOOTER ======================= */}
         <footer className="border-t border-[var(--color-line-soft)] px-6 py-10 sm:px-10">
           <div className="mx-auto flex w-full max-w-5xl flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-            <p className="text-[13px] font-light text-[var(--color-ink-3)]">{t.footer}</p>
+            <p className="text-[13px] font-normal text-[var(--color-ink-3)]">{t.footer}</p>
             <p className="tag">{t.footerTag}</p>
           </div>
         </footer>

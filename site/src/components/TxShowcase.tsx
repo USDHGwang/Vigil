@@ -379,13 +379,13 @@ export default function TxShowcase() {
           <div className="absolute bottom-8 left-6 max-w-[300px] sm:left-24">
             <span
               ref={labelNumRef}
-              className="font-mono text-[12px] font-medium tracking-[0.14em] text-[var(--color-accent)]"
+              className="font-mono text-[12px] font-medium tracking-[0.11em] text-[var(--color-accent)]"
             >
               01
             </span>
             <h3
               ref={labelTitleRef}
-              className="mt-1.5 text-2xl font-light tracking-[-0.02em] text-[var(--color-ink)]"
+              className="mt-1.5 text-2xl font-normal tracking-[-0.02em] text-[var(--color-ink)]"
             >
               You say a word
             </h3>
@@ -411,7 +411,7 @@ export default function TxShowcase() {
                       V
                     </div>
                     <div>
-                      <p className="mt-1 text-[16px] font-light tracking-[-0.01em] text-[var(--color-ink)]">
+                      <p className="mt-1 text-[16px] font-normal tracking-[-0.01em] text-[var(--color-ink)]">
                         &ldquo;{s.bubble}&rdquo;
                       </p>
                     </div>
@@ -433,10 +433,10 @@ export default function TxShowcase() {
                 <div className="rounded-[15px] bg-[#0c0e14] p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="grid h-5 w-5 place-items-center rounded-[6px] bg-[rgba(0,82,255,0.25)] text-[10px] text-[#8ab4ff]">
+                      <span className="grid h-5 w-5 place-items-center rounded-[6px] bg-[rgba(0,82,255,0.25)] text-[11px] text-[#8ab4ff]">
                         ◈
                       </span>
-                      <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink-3)]">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink-3)]">
                         Transaction
                       </span>
                     </div>
@@ -452,7 +452,7 @@ export default function TxShowcase() {
                       data-anim={`row-${r.k.toLowerCase()}`}
                       className="mb-2.5 flex items-center justify-between rounded-[10px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.025)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
                     >
-                      <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--color-ink-3)]">
+                      <span className="font-mono text-[11px] tracking-[0.1em] text-[var(--color-ink-3)]">
                         {r.k}
                       </span>
                       <span className={`font-mono text-[12px] tracking-[0.08em] ${r.w}`}>
@@ -461,7 +461,7 @@ export default function TxShowcase() {
                     </div>
                   ))}
                   <div className="mt-4 flex justify-end">
-                    <span className="rounded-full border border-[rgba(120,160,255,0.35)] px-4 py-1.5 font-mono text-[10px] tracking-[0.12em] text-[#8ab4ff]">
+                    <span className="rounded-full border border-[rgba(120,160,255,0.35)] px-4 py-1.5 font-mono text-[11px] tracking-[0.1em] text-[#8ab4ff]">
                       {s.simulate}
                     </span>
                   </div>
@@ -478,13 +478,10 @@ export default function TxShowcase() {
                     className="flex items-center gap-2.5 rounded-lg border border-[rgba(120,160,255,0.35)] bg-[rgba(61,92,255,0.1)] px-4 py-1.5"
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-[#8ab4ff]" />
-                    <span className="font-mono text-[10px] tracking-[0.13em] text-[#8ab4ff]">
+                    <span className="font-mono text-[11px] tracking-[0.1em] text-[#8ab4ff]">
                       CALL · simulate
                     </span>
                   </div>
-                  <span className="font-mono text-[9px] tracking-[0.13em] text-[var(--color-ink-3)]">
-                    debug_traceCall
-                  </span>
                 </div>
 
                 {/* 流動線 */}
@@ -500,21 +497,21 @@ export default function TxShowcase() {
                   className="flex items-center justify-between rounded-[10px] border border-[rgba(255,255,255,0.16)] bg-[rgba(14,16,22,0.96)] px-5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(0,0,0,0.4)]"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="grid h-4 w-4 place-items-center rounded-[4px] bg-[rgba(0,82,255,0.3)] text-[9px] text-[#8ab4ff]">
+                    <span className="grid h-4 w-4 place-items-center rounded-[4px] bg-[rgba(0,82,255,0.3)] text-[10px] text-[#8ab4ff]">
                       ◈
                     </span>
-                    <span className="font-mono text-[10px] tracking-[0.13em] text-[var(--color-ink)]">
+                    <span className="font-mono text-[11px] tracking-[0.1em] text-[var(--color-ink)]">
                       MONAD NODE
                     </span>
                   </div>
-                  <span className="font-mono text-[9px] tracking-[0.12em] text-[#74a487]">
+                  <span className="font-mono text-[10px] tracking-[0.1em] text-[#74a487]">
                     ● mainnet
                   </span>
                 </div>
 
                 {/* TRACE 輸出 */}
                 <div className="mt-4">
-                  <p className="mb-1.5 font-mono text-[9px] tracking-[0.12em] text-[var(--color-ink-3)]">
+                  <p className="mb-1.5 font-mono text-[10px] tracking-[0.1em] text-[var(--color-ink-3)]">
                     TRACE
                   </p>
                   <div className="flex flex-col gap-1.5">
@@ -525,10 +522,10 @@ export default function TxShowcase() {
                         className="flex items-center justify-between rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-1.5"
                       >
                         <span className="flex items-center gap-3">
-                          <span className="font-mono text-[10px] text-[var(--color-ink-3)]">
+                          <span className="font-mono text-[11px] text-[var(--color-ink-3)]">
                             ▸
                           </span>
-                          <span className="font-mono text-[11px] tracking-[0.06em] text-[var(--color-ink-2)]">
+                          <span className="font-mono text-[12px] tracking-[0.05em] text-[var(--color-ink-2)]">
                             {op}
                           </span>
                         </span>
@@ -546,7 +543,7 @@ export default function TxShowcase() {
                 <div className="grid w-full grid-cols-[1fr_44px_1fr] items-center gap-0">
                   {/* AGENT SAID */}
                   <div>
-                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
                       {s.agentSaid}
                     </p>
                     {["stake", "amount", "receiver"].map((k, i) => (
@@ -555,7 +552,7 @@ export default function TxShowcase() {
                         data-anim={`claim-${i}`}
                         className="mb-2 flex items-center justify-between rounded-[8px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)] px-3.5 py-2.5"
                       >
-                        <span className="font-mono text-[10px] tracking-[0.08em] text-[var(--color-ink-2)]">
+                        <span className="font-mono text-[11px] tracking-[0.08em] text-[var(--color-ink-2)]">
                           {k}
                         </span>
                         <span className="h-[6px] w-14 rounded-full bg-[rgba(255,255,255,0.14)]" />
@@ -574,7 +571,7 @@ export default function TxShowcase() {
                   </div>
                   {/* CHAIN RETURNED */}
                   <div>
-                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
                       {s.chainReturned}
                     </p>
                     {["stake", "amount", "receiver"].map((k, i) => (
@@ -583,7 +580,7 @@ export default function TxShowcase() {
                         data-anim={`res-${i}`}
                         className="mb-2 flex items-center justify-between rounded-[8px] border border-[rgba(116,164,135,0.2)] bg-[rgba(116,164,135,0.04)] px-3.5 py-2.5"
                       >
-                        <span className="font-mono text-[10px] tracking-[0.08em] text-[var(--color-ink-2)]">
+                        <span className="font-mono text-[11px] tracking-[0.08em] text-[var(--color-ink-2)]">
                           {k}
                         </span>
                         <span className="flex items-center gap-1">
@@ -598,8 +595,8 @@ export default function TxShowcase() {
                   data-anim="verdict"
                   className="flex items-center gap-3 rounded-full border border-[#74a487] bg-[rgba(116,164,135,0.08)] px-6 py-2.5"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.13em] text-[#74a487]">
-                    3 / 3 ALIGNED
+                  <span className="font-mono text-[11px] tracking-[0.1em] text-[#74a487]">
+                    {s.aligned}
                   </span>
                   <span className="h-1.5 w-1.5 rounded-full bg-[#74a487]" />
                 </div>
@@ -613,11 +610,11 @@ export default function TxShowcase() {
                   data-anim="fpTop"
                   className="flex w-full items-center justify-between rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[rgba(14,16,22,0.92)] px-5 py-3.5"
                 >
-                  <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
                     {s.panel}
                   </span>
-                  <span className="font-mono text-[16px] tracking-[0.18em] text-[var(--color-ink)]">
-                    4F8C A2D1
+                  <span className="font-mono text-[16px] tracking-[0.12em] text-[var(--color-ink)]">
+                    FFC9 2520
                   </span>
                 </div>
 
@@ -632,11 +629,11 @@ export default function TxShowcase() {
                   data-anim="fpBot"
                   className="flex w-full items-center justify-between rounded-[10px] border border-[rgba(255,255,255,0.12)] bg-[rgba(14,16,22,0.92)] px-5 py-3.5"
                 >
-                  <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-3)]">
                     {s.signPage}
                   </span>
-                  <span className="font-mono text-[16px] tracking-[0.18em] text-[var(--color-ink)]">
-                    4F8C A2D1
+                  <span className="font-mono text-[16px] tracking-[0.12em] text-[var(--color-ink)]">
+                    FFC9 2520
                   </span>
                 </div>
 
@@ -645,7 +642,7 @@ export default function TxShowcase() {
                   className="mt-6 flex items-center gap-2.5 rounded-full border border-[#74a487] bg-[rgba(116,164,135,0.08)] px-5 py-2"
                 >
                   <span className="text-[12px] text-[#74a487]">≡</span>
-                  <span className="font-mono text-[10px] tracking-[0.12em] text-[#74a487]">
+                  <span className="font-mono text-[11px] tracking-[0.1em] text-[#74a487]">
                     {s.match}
                   </span>
                 </div>
@@ -660,10 +657,10 @@ export default function TxShowcase() {
                   data-anim="txArrive"
                   className="flex w-[260px] items-center justify-between rounded-xl border border-[rgba(116,164,135,0.35)] bg-[rgba(14,16,22,0.95)] px-5 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_36px_rgba(116,164,135,0.15)]"
                 >
-                  <span className="font-mono text-[10px] tracking-[0.12em] text-[#74a487]">
+                  <span className="font-mono text-[11px] tracking-[0.1em] text-[#74a487]">
                     {s.verified}
                   </span>
-                  <span className="flex items-center gap-2 font-mono text-[11px] text-[var(--color-ink)]">
+                  <span className="flex items-center gap-2 font-mono text-[12px] text-[var(--color-ink)]">
                     stake shMONAD
                     <span className="status-dot h-1.5 w-1.5 rounded-full bg-[#74a487]" />
                   </span>
@@ -672,7 +669,7 @@ export default function TxShowcase() {
                 {/* 選擇的時刻 */}
                 <p
                   data-anim="decideLabel"
-                  className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-ink-2)]"
+                  className="text-[12px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink-2)]"
                 >
                   {s.youDecide}
                 </p>
@@ -681,22 +678,22 @@ export default function TxShowcase() {
                   <div className="flex flex-col items-center gap-2">
                     <span
                       data-anim="btnSign"
-                      className="rounded-full border border-[#74a487] bg-[rgba(116,164,135,0.16)] px-6 py-2 font-mono text-[11px] tracking-[0.14em] text-[#74a487]"
+                      className="rounded-full border border-[#74a487] bg-[rgba(116,164,135,0.16)] px-6 py-2 font-mono text-[12px] tracking-[0.1em] text-[#74a487]"
                     >
                       {s.sign}
                     </span>
-                    <span className="text-[10px] text-[var(--color-ink-3)]">
+                    <span className="text-[11px] text-[var(--color-ink-3)]">
                       {s.broadcasts}
                     </span>
                   </div>
                   <div className="flex flex-col items-center gap-2">
                     <span
                       data-anim="btnReject"
-                      className="rounded-full border border-[rgba(255,255,255,0.16)] px-6 py-2 font-mono text-[11px] tracking-[0.14em] text-[var(--color-ink-3)]"
+                      className="rounded-full border border-[rgba(255,255,255,0.16)] px-6 py-2 font-mono text-[12px] tracking-[0.1em] text-[var(--color-ink-3)]"
                     >
                       {s.reject}
                     </span>
-                    <span className="text-[10px] text-[var(--color-ink-3)]">
+                    <span className="text-[11px] text-[var(--color-ink-3)]">
                       {s.nothingMoves}
                     </span>
                   </div>

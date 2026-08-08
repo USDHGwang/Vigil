@@ -178,7 +178,7 @@ cd Vigil/app && pnpm install && pnpm build:all`;
           <p className="tag-accent mb-6">MCP · INSTALL</p>
         </Reveal>
         <Reveal delay={80}>
-          <h1 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
+          <h1 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
             {a.title}
           </h1>
         </Reveal>
@@ -219,7 +219,7 @@ cd Vigil/app && pnpm install && pnpm build:all`;
                   <ol className="mt-3 space-y-1.5">
                     {h.steps.map((s, si) => (
                       <li key={si} className="flex items-start gap-2.5 text-[14px] leading-[1.55] text-[var(--color-ink-3)] transition-colors duration-300 group-hover:text-[var(--color-ink-2)]">
-                        <span className="mt-[3px] grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-[rgba(120,160,255,0.3)] font-mono text-[10px] leading-none text-[#8ab4ff]">
+                        <span className="mt-[3px] grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full border border-[rgba(120,160,255,0.3)] font-mono text-[11px] leading-none text-[#8ab4ff]">
                           {si + 1}
                         </span>
                         <span>{s}</span>
@@ -282,7 +282,7 @@ cd Vigil/app && pnpm install && pnpm build:all`;
 
       <footer className="relative border-t border-[var(--color-line-soft)] px-6 py-10 sm:px-10">
         <div className="mx-auto flex w-full max-w-5xl flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <p className="text-[13px] font-light text-[var(--color-ink-3)]">{t.footer}</p>
+          <p className="text-[13px] font-normal text-[var(--color-ink-3)]">{t.footer}</p>
           <p className="tag">{t.footerTag}</p>
         </div>
       </footer>

@@ -14,7 +14,7 @@ export default function NotFound() {
       <p className="mt-8 font-mono text-[11px] tracking-[0.2em] text-[var(--color-ink-3)] uppercase">
         404 — nothing here
       </p>
-      <h1 className="mt-4 max-w-md text-3xl font-light tracking-[-0.02em] text-[var(--color-ink)]">
+      <h1 className="mt-4 max-w-md text-3xl font-normal tracking-[-0.02em] text-[var(--color-ink)]">
         The watchman saw nothing here.
       </h1>
       <p className="mt-3 max-w-sm text-[15px] leading-[1.6] text-[var(--color-ink-2)]">

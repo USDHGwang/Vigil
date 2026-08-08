@@ -25,7 +25,7 @@ export default function DocsPage() {
           <p className="tag-accent mb-6">{c.tag}</p>
         </Reveal>
         <Reveal delay={80}>
-          <h1 className="max-w-3xl text-4xl font-light leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
+          <h1 className="max-w-3xl text-4xl font-normal leading-[1.12] tracking-[-0.02em] text-[var(--color-ink)] md:text-5xl">
             {c.title}
           </h1>
         </Reveal>
