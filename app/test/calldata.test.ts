@@ -46,7 +46,7 @@ describe("inspectCalldata", () => {
     expect(findings).toHaveLength(1);
     expect(findings[0]?.severity).toBe("danger");
     expect(findings[0]?.key).toBe("sign_risk_unlimited");
-    expect(findings[0]?.vars.who.toLowerCase()).toContain("0x9f2ca7");
+    expect(String(findings[0]?.vars.who).toLowerCase()).toContain("0x9f2ca7");
   });
 
   it("有上限的授權一樣是 danger——額度大小是人要判斷的，不是我們替他判斷的", () => {

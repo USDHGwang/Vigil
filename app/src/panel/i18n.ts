@@ -194,6 +194,8 @@ const en: Dict = {
     "Remembered wallet address {short} for this conversation. Future previews simulate against this address (real balance and fees). It lives only in this session's memory — nothing is written anywhere.",
   tool_remember_stateless:
     "This deployment (stateless HTTP) cannot remember an address across requests. Keep the user's wallet address in the conversation and pass account to every preview_transaction call.",
+  tool_recent_stateless:
+    "This deployment (stateless HTTP) keeps no preview history. Requests here share one process with no session boundary, so a history would show one user what another user previewed. Scroll back through the conversation instead.",
   tool_host_unknown: "(not declared)",
   tool_host_declared: "Declared extensions: {list}",
   tool_host_none_ext: "(no extensions declared)",
@@ -371,6 +373,8 @@ const zhCN: Dict = {
     "已记住这个对话的钱包地址 {short}。之后的预览都会用这个地址模拟（真实余额与手续费）。只存在这个会话的内存里，不会写入任何地方。",
   tool_remember_stateless:
     "这个部署模式（无状态 HTTP）不支持跨请求记住地址。请在对话中记住用户的钱包地址，每笔 preview_transaction 都带 account 参数。",
+  tool_recent_stateless:
+    "这个部署模式（无状态 HTTP）不保存预览记录。这里所有请求共用一个 process、没有 session 边界，留记录等于把 A 预览过什么给 B 看到。请改成往回翻对话。",
   tool_host_unknown: "（未声明）",
   tool_host_declared: "声明的 extensions：{list}",
   tool_host_none_ext: "（没有声明任何 extension）",
@@ -547,6 +551,8 @@ const zhTW: Dict = {
     "已記住這個對話的錢包地址 {short}。之後的預覽都會用這個地址模擬（真實餘額與手續費）。只存在這個 session 的記憶體，不會寫入任何地方。",
   tool_remember_stateless:
     "這個部署模式（無狀態 HTTP）不支援跨請求記住地址。請在對話中記住使用者的錢包地址，每筆 preview_transaction 都帶 account 參數。",
+  tool_recent_stateless:
+    "這個部署模式（無狀態 HTTP）不保存預覽紀錄。這裡所有請求共用一個 process、沒有 session 邊界，留紀錄等於把 A 預覽過什麼給 B 看到。請改成往回翻對話。",
   tool_host_unknown: "（未宣告）",
   tool_host_declared: "宣告的 extensions：{list}",
   tool_host_none_ext: "（沒有宣告任何 extension）",

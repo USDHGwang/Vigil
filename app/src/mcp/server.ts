@@ -192,7 +192,13 @@ export function createServer(options: ServerOptions = {}): McpServer {
         });
         // 記一筆，讓使用者之後回頭找得到「剛剛那筆是什麼」。
         // 只記成功的預覽：回頭看的價值在於「我做過什麼」，不是「我試錯過什麼」。
-        record(result.view);
+        //
+        // **無狀態模式一律不記。** history 的 records 是 module 級的，而 http.ts
+        // 每個請求開一個新 server 卻共用同一個 process——照記的話 recent_previews
+        // 會把 A 的 statedRequest（使用者原話）原樣給 B 看到。history.ts 的註解
+        // 早就寫了「遠端部署前必須先綁 session」，但先前只有 remember_account
+        // 吃這個旗標，這條路徑沒有。
+        if (!options.stateless) record(result.view);
 
         return {
           // content 是給不能渲染 HTML 的 host 用的（Claude Code、Codex 這類 CLI）。
@@ -251,6 +257,15 @@ export function createServer(options: ServerOptions = {}): McpServer {
       _meta: { ui: { resourceUri: PANEL_RESOURCE_URI } },
     },
     async ({ limit, locale }): Promise<CallToolResult> => {
+      // 無狀態部署沒有 session 邊界，讀這份共用清單等於讀別人的紀錄。
+      // 寫入端已經擋掉了，讀取端也要擋——不然清單空著會被讀成「你還沒預覽過」，
+      // 而真正的原因是這個部署模式不提供這件事。
+      if (options.stateless) {
+        return {
+          content: [{ type: "text", text: t(locale, "tool_recent_stateless") }],
+          structuredContent: { previews: [], supported: false },
+        };
+      }
       const list = recent(limit ?? MAX_RECORDS);
       const text =
         list.length === 0

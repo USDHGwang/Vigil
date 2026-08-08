@@ -17,6 +17,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import type { EvidencePanelView } from "../src/contract.js";
+import { record, resetHistory } from "../src/history.js";
 import { createServer } from "../src/mcp/server.js";
 
 const SIGN_PAGE_URL = "http://127.0.0.1:65000/sign";
@@ -167,17 +169,55 @@ describe("對抗性：輸入邊界", () => {
 });
 
 describe("對抗性：無狀態模式（HTTP 部署）", () => {
-  it("remember_account 在無狀態模式回 supported:false，不寫共享記憶", async () => {
+  async function statelessClient(name: string): Promise<Client> {
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const server = createServer({ signPageUrl: SIGN_PAGE_URL, stateless: true });
-    const c = new Client({ name: "adversarial-stateless", version: "0.0.0" });
+    const c = new Client({ name, version: "0.0.0" });
     await Promise.all([server.connect(serverTransport), c.connect(clientTransport)]);
+    return c;
+  }
 
+  it("remember_account 在無狀態模式回 supported:false，不寫共享記憶", async () => {
+    const c = await statelessClient("adversarial-stateless");
     const result = await c.callTool({
       name: "remember_account",
       arguments: { address: ACCOUNT, locale: "zh-TW" },
     });
     const text = textOf(result);
     expect(text).toMatch(/supported:false|不支援|無狀態/);
+  });
+
+  /**
+   * history 的 records 是 module 級的，而無狀態部署每個請求開一個新 server
+   * 卻共用同一個 process。不擋的話 A 的原話會出現在 B 的 recent_previews 裡。
+   */
+  it("recent_previews 在無狀態模式不吐別人的紀錄", async () => {
+    resetHistory();
+    record({
+      intent: {
+        source: "agent",
+        protocol: "shmonad",
+        method: "stake",
+        params: {},
+        text: "另一個使用者的原話",
+      },
+      receipt: null,
+      changes: [],
+      warnings: [],
+      verdict: { kind: "match" },
+      signable: true,
+      account: ACCOUNT,
+      locale: "zh-TW",
+      accountSource: "agent",
+      tokens: {},
+      transactions: [],
+      fingerprint: "AAAABBBBCCCCDDDD",
+    } as unknown as EvidencePanelView);
+
+    const c = await statelessClient("adversarial-other-user");
+    const text = textOf(await c.callTool({ name: "recent_previews", arguments: { locale: "zh-TW" } }));
+    expect(text).not.toContain("另一個使用者的原話");
+    expect(text).toMatch(/不保存|無狀態/);
+    resetHistory();
   });
 });
