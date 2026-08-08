@@ -1,19 +1,18 @@
-# 把介紹站與簽名頁一起部署到 GitHub Pages。
+# 把介紹站部署到 GitHub Pages。
 #
-# 為什麼這兩個放在一起：
-#   - 站（site/）是 Next.js 靜態匯出，本來就要一個公開網址。
-#   - 簽名頁（app/sign/index.html）是完全自包含的靜態 HTML，交易資料在網址的
-#     `#` 後面、不會送到伺服器，所以它不需要後端，可以跟站放同一個地方。
+# **這裡不再部署簽名頁。** 先前它跟站一起放上來，理由是它自包含、交易在 `#`
+# 後面所以不需要後端——那些理由都還成立，但「可以放」不等於「該放兩份」。
 #
-# 為什麼簽名頁需要公開 https 網址：本機模式下它是
-# `http://127.0.0.1:<每次都不同的 port>/sign`，而 MCP host 對面板能開哪些網址
-# 有政策——localhost 加浮動 port 正好是最容易被擋的形狀。2026-08-04 實測
-# `openLink` 回 isError，使用者按下簽名什麼都不會發生。指到固定的 https 網址
-# 通常就不再被擋（這件事要部署完才驗得到，見 docs/HANDOFF）。
+# 簽名頁只留 Cloudflare worker 的 `/sign` 一個位置，因為那是面板真的會交接過去
+# 的地方：MCP server 用 `PUBLIC_URL` 算出 signPageUrl 送給面板，worker 的
+# `PUBLIC_URL` 指的就是它自己。Pages 這份沒有任何東西會指過來。
 #
-# 部署後要把 MCP server 指過去：
-#   claude_desktop_config.json 的 env 加
-#   "SIGN_PAGE_URL": "https://usdhgwang.github.io/Vigil/sign/"
+# 為什麼要收掉而不是留著當備援：那一頁只讀網址 fragment，誰都做得出一個指向它
+# 的連結。它現在會自己解 calldata、不掛「主網模擬」徽章、解出授權時不自動叫錢包
+# （見 app/src/sign/calldata.ts），但每多一個託管位置就多一個要一起維護這些性質
+# 的地方，而 worker 是內嵌 build 產物、Pages 是 workflow 複製檔案，兩條更新路徑
+# 不同步的時候不會有人發現。2026-08-09 就發生過：main 上的加固進了 Pages，
+# worker 還在送舊版。
 
 name: Pages
 
@@ -47,17 +46,6 @@ jobs:
         with:
           node-version: 24
 
-      # ── 簽名頁 ──────────────────────────────────────────────
-      # 產物沒進版控，所以這裡要真的建一次。這一步同時是個檢查：
-      # 建不出來就不會部署一個過期的簽名頁上去。
-      - name: 安裝 app（會一併建 vendor 裡的 Moss）
-        working-directory: app
-        run: pnpm install --frozen-lockfile
-
-      - name: 建簽名頁
-        working-directory: app
-        run: pnpm build:sign
-
       # ── 站 ─────────────────────────────────────────────────
       - name: 安裝 site
         working-directory: site
@@ -70,26 +58,8 @@ jobs:
           PAGES_BASE_PATH: /Vigil
         run: pnpm build
 
-      # ── 合併 ────────────────────────────────────────────────
-      - name: 把簽名頁放進站的產物
-        run: |
-          set -e
-          mkdir -p site/out/sign
-          cp app/sign/index.html site/out/sign/index.html
-          test -s site/out/sign/index.html
-          echo "sign/index.html  $(wc -c < site/out/sign/index.html) bytes"
-
-      # 簽名頁跑在一般瀏覽器裡（不是 sandbox），但它一樣必須自包含：
-      # 它要在使用者的錢包瀏覽器裡獨立運作，載不到外部資源才不會有東西壞掉。
-      - name: 確認簽名頁自包含
-        run: |
-          set -e
-          if grep -qE '<(script|link)[^>]+(src|href)=["'"'"']https?:' site/out/sign/index.html; then
-            echo "簽名頁含有外部資源"
-            exit 1
-          fi
-          echo "ok 自包含"
-
+      # 舊部署留下來的 site/out/sign 不會自己消失——Pages 每次換掉整份
+      # artifact，所以這一支跑完之後 /Vigil/sign/ 就 404 了，不需要額外清理。
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -122,7 +122,8 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 ### 簽名頁不預設你是從哪裡來的
 
 這一頁託管在固定網址、只讀 fragment，所以任何人都做得出一個指向它的連結。上面那套指紋比對，
-對「從來沒看過面板」的使用者沒有用——寫那串連結的人也寫了那串指紋。
+對「從來沒看過面板」的使用者沒有用——寫那串連結的人也寫了那串指紋。也因為這樣，它只留一個
+託管位置（worker 的 `/sign`）：多一份就多一個要維持這些性質的地方，而各份的更新路徑不一樣。
 
 所以這一頁自己解一件事出來。它用 viem 在本機解 calldata（`approve`、`setApprovalForAll`、
 `increaseAllowance`、ERC-2612 `permit`、Permit2、`transferFrom`），把那段位元組做什麼印在交易明細
@@ -154,7 +155,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | MCP server + UI resource：MCP Apps 面板（Claude Desktop、claude.ai）+ CLI host 的 ANSI 文字 | 完成 |
 | 簽名交回錢包——兩頁同一串指紋、篡改路徑瀏覽器實測、2026-08-07 主網端到端實送 | 完成 |
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
-| 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、介紹站 [vigilapp.vercel.app](https://vigilapp.vercel.app)、簽名頁 worker 的 `/sign` 與 [usdhgwang.github.io/Vigil/sign/](https://usdhgwang.github.io/Vigil/sign/) 兩處都有 | 完成 |
+| 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、簽名頁只在那個 worker 的 `/sign`、介紹站 [vigilapp.vercel.app](https://vigilapp.vercel.app) | 完成 |
 
 `pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。詳細狀態、決定紀錄、風險維護在內部文件。
 

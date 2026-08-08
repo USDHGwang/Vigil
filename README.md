@@ -145,6 +145,9 @@ The signing page also compares the wallet's current account against the sender o
 The page is served from a fixed public URL and reads only the fragment, so
 anyone can build a link to it. The fingerprint comparison above does not help a
 user who never saw a panel — whoever wrote the link also wrote the fingerprint.
+For that reason it has exactly one host, the worker's `/sign`: every extra copy
+is another place these properties have to be kept true, and the copies update
+by different routes.
 
 So the page derives one thing for itself. It decodes the calldata locally with
 viem — `approve`, `setApprovalForAll`, `increaseAllowance`, ERC-2612 `permit`,
@@ -202,7 +205,7 @@ Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md) (Traditional 
 | MCP server with UI resource: MCP Apps panel (Claude Desktop, claude.ai) + ANSI text for CLI hosts | done |
 | Signing handoff to wallet — fingerprint on both pages, tamper paths tested in a browser, end to end verified on mainnet 2026-08-07 | done |
 | Wallet connect (so the account stops coming from the agent) | not started |
-| Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), marketing site on [vigilapp.vercel.app](https://vigilapp.vercel.app), signing page served from both the worker `/sign` and [usdhgwang.github.io/Vigil/sign/](https://usdhgwang.github.io/Vigil/sign/) | done |
+| Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), signing page at that worker's `/sign` and nowhere else, marketing site on [vigilapp.vercel.app](https://vigilapp.vercel.app) | done |
 
 `pnpm check`: **364 tests**. `MOSS_SKIP_E2E=1` runs 338 of them with no network
 at all; the rest simulate against Monad mainnet (no signing, no cost).
