@@ -37,6 +37,19 @@ interface Case {
   protocol: string;
   method: string;
   params: Record<string, unknown>;
+  /**
+   * 這一筆真實鏈上資料應該得到哪個結論。
+   *
+   * 為什麼要有這欄：先前這支只斷言「面板存在、invariants 成立、沒混中文」，
+   * verdict 收集起來只印進 log。結論判錯照樣綠燈——也就是說整個測試套件裡，
+   * 沒有任何一條路徑讓真實鏈上資料碰到偵測規則。規則的離線矩陣在
+   * pipeline.test.ts，這裡補的是「同一組規則吃真節點回來的 Change 也成立」。
+   *
+   * 允許多個值：revert 路徑會依帳戶當下的餘額落在 blocked 或 error，那是環境
+   * 差異不是判斷錯誤。收斂到「不可以是 match」就夠——把一筆送不出去或帶著
+   * 授權的交易講成乾淨一致，才是這個產品真正不能犯的錯。
+   */
+  expect: readonly (EvidencePanelView["verdict"]["kind"] | "error")[];
 }
 
 const CASES: Case[] = [
@@ -45,54 +58,65 @@ const CASES: Case[] = [
     protocol: "shmonad",
     method: "stake",
     params: { amount: "0.25" },
+    // 有真實 shMON 部位；乾淨的質押應該是唯一會拿到 match 的形狀
+    expect: ["match"],
   },
   {
     name: "shmonad.unstake",
     protocol: "shmonad",
     method: "unstake",
     params: { shares: "0.1", owner: DEMO },
+    expect: ["match", "partial", "blocked"],
   },
   {
     name: "wmon.wrap（小額，真實 MON）",
     protocol: "wmon",
     method: "wrap",
     params: { amount: "0.05" },
+    expect: ["match", "blocked"],
   },
   {
     name: "wmon.unwrap（無 WMON → revert 路徑）",
     protocol: "wmon",
     method: "unwrap",
     params: { amount: "0.05" },
+    expect: ["blocked", "error"],
   },
   {
     name: "erc20.approve（不需持有，只付 gas）",
     protocol: "erc20",
     method: "approve",
     params: { token: USDC, spender: STRANGER, amount: "100" },
+    // 把餘額交給發送者以外的人，額度大小不影響：至少 partial，永遠不是 match
+    expect: ["partial", "blocked"],
   },
   {
     name: "erc20.transfer（無 USDC → revert 路徑）",
     protocol: "erc20",
     method: "transfer",
     params: { token: USDC, to: STRANGER, amount: "1" },
+    expect: ["blocked", "error"],
   },
   {
     name: "erc721.transfer（非 721 合約 → revert 路徑）",
     protocol: "erc721",
     method: "transfer",
     params: { collection: SHMONAD, tokenId: "1", to: STRANGER },
+    expect: ["blocked", "error"],
   },
   {
     name: "erc1155.transfer（非 1155 合約 → revert 路徑）",
     protocol: "erc1155",
     method: "transfer",
     params: { collection: SHMONAD, tokenId: "1", amount: "1", to: STRANGER },
+    expect: ["blocked", "error"],
   },
   {
     name: "erc1155.approve（非 1155 合約 → revert 路徑）",
     protocol: "erc1155",
     method: "approve",
     params: { collection: SHMONAD, operator: STRANGER, approved: true },
+    expect: ["blocked", "error"],
   },
   {
     // ⚠️ 金額要夠大：小額（<1 MON）成交走訂單簿，會觸發 Moss 不認得的
@@ -102,6 +126,7 @@ const CASES: Case[] = [
     protocol: "kuru",
     method: "swap",
     params: { tokenIn: "native", tokenOut: USDC, amountIn: "1" },
+    expect: ["match", "partial", "blocked"],
   },
 ];
 
@@ -135,6 +160,7 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("全 protocol 流暢度（對主網
         // 錯誤也要是可讀的產品訊息，不是原生例外
         const text = JSON.stringify(result.content);
         expect(text).not.toMatch(/InvalidAddressError|viem|TypeError|Error: /);
+        expect(c.expect, `${c.name}: 預期 ${c.expect.join("/")}，實際整筆失敗`).toContain("error");
         results.push({ name: c.name, verdict: "error", signable: false, err: text.slice(0, 120) });
         continue;
       }
@@ -148,6 +174,19 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("全 protocol 流暢度（對主網
       // en 面板：不能混中文
       const text = JSON.stringify(result.content);
       expect(text, `${c.name}: en 混中文`).not.toMatch(/[\u4e00-\u9fff]/);
+
+      // 這一條才是「判斷正確」的斷言。真節點回來的 Change 走過同一組規則，
+      // 結論必須落在預期集合裡；落到 match 而預期沒有 match，就是把一筆該讓
+      // 人停下來的交易講成了乾淨一致。
+      expect(
+        c.expect,
+        `${c.name}: 預期 ${c.expect.join("/")}，實際 ${v.verdict.kind}`,
+      ).toContain(v.verdict.kind);
+
+      // match 是唯一會讓使用者直接簽下去的結論，跟 signable 的關係要鎖住
+      if (v.verdict.kind === "match") {
+        expect(v.signable, `${c.name}: match 卻不可簽`).toBe(true);
+      }
 
       results.push({ name: c.name, verdict: v.verdict.kind, signable: v.signable });
     }

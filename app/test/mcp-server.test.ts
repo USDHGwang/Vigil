@@ -102,7 +102,10 @@ describe("MCP App 協定面", () => {
     expect(html).not.toMatch(/<link[^>]+href=["']https?:/i);
   });
 
-  it("不存在的協議回報錯誤而不是丟例外", async () => {
+  // 這條要走到 registry，也就是 getStack() → createRuntime() → 打主網。
+  // 它剛好在 RPC 死掉時也會回 isError 所以不會紅，但它確實連外，
+  // 歸 live 才對得起 MOSS_SKIP_E2E 的意思。
+  it.skipIf(!!process.env.MOSS_SKIP_E2E)("不存在的協議回報錯誤而不是丟例外", async () => {
     const result = await previewTool({
       statedRequest: "做一件事",
       protocol: "nonexistent",
