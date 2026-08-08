@@ -10,6 +10,7 @@ import { formatFingerprint, type HandoffPayload } from "../handoff.js";
 import { esc, shortHex } from "../html.js";
 import { t, type Locale } from "../panel/i18n.js";
 import { LOGOMARK_SVG } from "../panel/brand.js";
+import { hasDanger, inspectCalldata } from "./calldata.js";
 
 export type Phase =
   /** 剛載入，還在問瀏覽器有沒有錢包 */
@@ -82,12 +83,43 @@ export function accountMatches(
 /**
  * 要不要一載入就直接觸發錢包。
  *
- * 兩個條件都要成立：
+ * 三個條件都要成立：
  *   已經連過 —— eth_requestAccounts 需要 user gesture，沒連過就自動叫會被吃掉
  *   只有一筆 —— 多筆時我們目前只送第一筆，不能在沒人按的情況下悄悄送出其中一筆
+ *   解出來的東西沒有 danger —— 這一頁是公開託管的，任何人都做得出一個指向它的
+ *     網址。自動觸發的意思是「點一個連結就跳出錢包確認框」，對授權類 calldata
+ *     來說那是把 Vigil 的品牌借給釣魚頁用。有 danger 就退回按鈕，讓使用者先讀
+ *     完下面那塊解碼結果再自己決定。
  */
 export function canAutoStart(payload: HandoffPayload, connected: boolean): boolean {
-  return connected && payload.transactions.length === 1;
+  if (!connected || payload.transactions.length !== 1) return false;
+  const tx = payload.transactions[0];
+  if (tx === undefined) return false;
+  return !hasDanger(inspectCalldata(tx.data, tx.to));
+}
+
+/**
+ * 這一頁自己解出來的 calldata 意義。
+ *
+ * 放在交易明細**上面**：`summary` 是產生網址的人自己填的字，截斷的 hex 沒人讀，
+ * 所以在這兩者之間，這塊是整頁唯一不經轉述的資訊。解不出來就明講解不出來——
+ * 沉默會被讀成「沒問題」。
+ */
+function decodedBlock(payload: HandoffPayload, locale: Locale): string {
+  const tx = payload.transactions[0];
+  if (tx === undefined) return "";
+  const findings = inspectCalldata(tx.data, tx.to);
+  const body =
+    findings.length === 0
+      ? `<p class="hint">${t(locale, "sign_risk_unknown")}</p>`
+      : `<ul>${findings
+          .map((f) => `<li class="${f.severity}">${esc(t(locale, f.key, f.vars))}</li>`)
+          .join("")}</ul>`;
+  return `<div class="decoded" data-danger="${hasDanger(findings)}">
+    <div class="k">${t(locale, "sign_risk_title")}</div>
+    ${body}
+    <p class="hint">${t(locale, "sign_risk_lead")}</p>
+  </div>`;
 }
 
 /** 金額用人看得懂的單位。跟面板同一條規則，不給 wei。 */
@@ -124,14 +156,19 @@ export function renderCard(payload: HandoffPayload, phase: Phase, locale: Locale
   const action = actionFor(phase, locale);
   const notice = noticeFor(phase, locale);
 
+  // brand 上刻意**沒有** `panel_source`（「主網模擬」）那顆徽章。面板上它是真的
+  // ——那一頁的內容真的來自 debug_traceCall。這一頁只讀網址，什麼都沒模擬過，
+  // 掛同一顆徽章等於替一段沒被驗證的 calldata 背書。
   return `<div class="card">
     <div class="brand">
       <span class="mark">${LOGOMARK_SVG}</span>
       <span class="name">${t(locale, "panel_name")}</span>
-      <span class="src"><span class="live"></span>${t(locale, "panel_source")}</span>
     </div>
     <h1>${t(locale, "sign_title")}</h1>
+    <p class="claim-label">${t(locale, "sign_summary_untrusted")}</p>
     <p class="lead">${esc(payload.summary)}</p>
+
+    ${decodedBlock(payload, locale)}
 
     <div class="fp">
       <div class="k">${t(locale, "sign_fingerprint")}</div>
