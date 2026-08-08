@@ -253,8 +253,8 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     const first = (result.content as { type: string; text: string }[])[0];
     const text = first?.text ?? "";
     expect(text).toContain("簽名前檢查");
-    expect(text).toContain("agent 說你要求的");
-    expect(text).toContain("鏈上會發生的");
+    expect(text).toContain("要求");
+    expect(text).toContain("鏈上行為");
     // 這個帳戶付不起，所以是不能簽的那條分支，理由要寫出來
     expect(text).toContain("這筆不能簽");
     expect(text).toContain("餘額不夠");
@@ -484,8 +484,8 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     const text = (result.content as { type: "text"; text: string }[])[0]?.text ?? "";
     // 回歸：en 面板的框架字串是英文（statedRequest 是使用者原話，保留原文不算）
     expect(text).toContain("Pre-sign check");
-    expect(text).toContain("What the agent says you asked for");
-    expect(text).toContain("What happens on-chain");
+    expect(text).toContain("Requested");
+    expect(text).toContain("On-chain");
     expect(text).not.toContain("簽名前檢查");
     expect(text).not.toContain("結論");
     expect(text).not.toContain("原始資料");
@@ -504,6 +504,6 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     expect(view.locale).toBe("zh-CN");
     const text = (result.content as { type: string; text: string }[])[0]?.text ?? "";
     expect(text).toContain("签名前检查");
-    expect(text).toContain("链上会发生的");
+    expect(text).toContain("链上行为");
   });
 });

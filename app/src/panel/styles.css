@@ -43,7 +43,7 @@
   --text-4: #6a6f77;
 
   /* 唯一功能色，只給互動。Monad Purple（官方 brand kit），8/6 從 Coinbase 藍換過來 */
-  --accent: #6e54ff;
+  --accent: #101010;
   --on-accent: #ffffff;
 
   /* verdict 語義色 */
@@ -61,9 +61,9 @@
   --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
 
   --tight: -0.02em;
-  --r-sm: 4px;
-  --r: 6px;
-  --r-lg: 8px;
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -79,8 +79,8 @@
     --text-2: #d0d6e0;
     --text-3: #9096a0;
     --text-4: #848a93;
-    --accent: #8b78ff;
-    --on-accent: #06122e;
+    --accent: #f2f2f0;
+    --on-accent: #101010;
     --match: #74a487;
     --partial: #d2a05a;
     --mismatch: #e8695f;
@@ -104,8 +104,8 @@
   --text-3: #9096a0;
   /* 10px 微標籤要過 AA，不能用 site 那個 #62666d（實測 3.30） */
   --text-4: #848a93;
-  --accent: #8b78ff;
-  --on-accent: #06122e;
+  --accent: #f2f2f0;
+  --on-accent: #101010;
   --match: #74a487;
   --partial: #d2a05a;
   --mismatch: #e8695f;
@@ -127,7 +127,7 @@
   --text-2: #4a4f57;
   --text-3: #5f646c;
   --text-4: #6a6f77;
-  --accent: #6e54ff;
+  --accent: #101010;
   --on-accent: #ffffff;
   --match: #3f7a56;
   --partial: #8f631a;
@@ -138,10 +138,7 @@
   --mismatch-bg: #fbecea;
   --blocked-bg: #eef0f3;
 }
-
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -149,43 +146,60 @@ body {
   color: var(--text);
   font-family: var(--ui);
   font-size: 13.5px;
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-/*
- * overflow 不設 hidden：host 會夾面板高度（SDK 的 maxHeight），夾到的時候
- * hidden 等於把下半截永久藏起來、也捲不到。可見性優先於圓角。
- */
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
+  overflow: hidden;
 }
 
-/* 大寫 mono 微標籤 —— site 那套「證據聲音」 */
+/* 情境切換（mock 專用，不出貨） */
+.harness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px dashed var(--line);
+}
+.harness button {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-4);
+  cursor: pointer;
+}
+.harness button[aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.provenance { margin: 0; padding: 8px 16px 0; font-size: 11px; color: var(--text-4); }
+.failed { padding: 14px; color: var(--mismatch); font-size: 12px; }
+
+/* 微標籤：sentence case、字重 500、tracking 收斂；最小 10.5px（不小於可讀線） */
 .tag {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--text-4);
 }
 
-/* ── 頁首 ────────────────────────────────────────── */
-
+/* ── 頁首：克制品牌 ─────────────────────────── */
 .p-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
+  gap: 10px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line-soft);
 }
 .p-head .mark {
-  width: 32px;
-  height: 16px;
-  border-radius: var(--r-sm);
+  width: 34px;
+  height: 17px;
+  border-radius: 4px;
   background: var(--accent);
   color: var(--on-accent);
   flex: none;
@@ -193,26 +207,22 @@ body {
   place-items: center;
   overflow: hidden;
 }
-.p-head .mark svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+.p-head .mark svg { width: 100%; height: 100%; display: block; }
 .p-head .name {
-  font-weight: 600;
+  font-weight: 650;
   font-size: 13px;
   letter-spacing: var(--tight);
   flex: 1;
 }
 .p-head .src {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   color: var(--text-4);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 .p-head .src .live {
   width: 5px;
@@ -221,18 +231,18 @@ body {
   background: var(--match);
 }
 
-/* ── 分頁 ────────────────────────────────────────── */
-
+/* ── 分頁 ────────────────────────────────── */
 .tabs {
   display: flex;
-  gap: 14px;
-  padding: 0 14px;
+  gap: 18px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line-soft);
 }
 .tabs button {
   font: inherit;
   font-size: 12px;
-  padding: 7px 0;
+  font-weight: 500;
+  padding: 8px 0;
   border: none;
   background: transparent;
   color: var(--text-4);
@@ -240,9 +250,7 @@ body {
   position: relative;
   transition: color 140ms ease;
 }
-.tabs button[aria-selected="true"] {
-  color: var(--text);
-}
+.tabs button[aria-selected="true"] { color: var(--text); font-weight: 600; }
 .tabs button[aria-selected="true"]::after {
   content: "";
   position: absolute;
@@ -253,52 +261,37 @@ body {
   background: var(--text);
 }
 
-button:focus-visible,
-a:focus-visible,
-summary:focus-visible {
-  outline: 2px solid var(--accent);
+button:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--text);
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
 
-/* ── 意圖 ────────────────────────────────────────── */
-
-.block {
-  padding: 12px 14px 0;
-}
+/* ── 意圖 ────────────────────────────────── */
+.block { padding: 16px 16px 0; }
 .label {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   color: var(--text-4);
-  margin-bottom: 5px;
+  margin-bottom: 7px;
 }
 .intent {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: var(--tight);
   margin: 0;
   text-wrap: balance;
 }
-.no-intent {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--text-3);
-}
+.no-intent { margin: 0; font-size: 12.5px; color: var(--text-3); }
 
-/*
- * 意圖參數預設收起來。它們多半是那句話的重複（「質押 0.25 MON」已經講完
- * amount），攤在預設層只是增加要讀的東西。
- */
-.more {
-  margin-top: 6px;
-}
+.more { margin-top: 8px; }
 .more > summary {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   color: var(--text-4);
   cursor: pointer;
   list-style: none;
@@ -308,181 +301,197 @@ summary:focus-visible {
   padding: 2px 0;
   transition: color 140ms ease;
 }
-.more > summary::-webkit-details-marker {
-  display: none;
-}
-.more > summary::after {
-  content: "＋";
-  font-size: 9px;
-}
-.more[open] > summary::after {
-  content: "−";
-}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::after { content: "＋"; font-size: 9px; }
+.more[open] > summary::after { content: "−"; }
 @media (hover: hover) and (pointer: fine) {
-  .more > summary:hover {
-    color: var(--text-2);
-  }
+  .more > summary:hover { color: var(--text-2); }
 }
-/* keyframe 而不是 transition：面板每次都是整段重畫，新節點跑不了 transition */
-.more[open] > .more-body {
-  animation: reveal 200ms var(--ease-out);
-}
+.more[open] > .more-body { animation: reveal 200ms var(--ease-out); }
 
 .params {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 2px 12px;
+  gap: 3px 14px;
   font-size: 12px;
-  margin: 6px 0 0;
+  margin: 8px 0 0;
 }
-.params dt {
-  color: var(--text-4);
-}
+.params dt { color: var(--text-4); }
 .params dd {
   margin: 0;
   font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
   color: var(--text-2);
 }
 
-/* ── 結論 ────────────────────────────────────────── */
-
+/* ── 結論：細邊框卡片，語義色做極淡 tint ────────── */
 .verdict {
-  margin: 12px 14px 0;
-  padding: 10px 12px;
+  margin: 16px 16px 0;
+  padding: 12px 14px;
   border-radius: var(--r);
+  border: 1px solid var(--line);
   background: var(--surface-2);
 }
 .v-head {
   display: flex;
   align-items: baseline;
-  gap: 7px;
+  gap: 8px;
   font-weight: 600;
   font-size: 13.5px;
   letter-spacing: var(--tight);
 }
-.v-glyph {
-  font-family: var(--mono);
-  font-size: 12px;
-}
-.v-note {
-  margin: 5px 0 0;
-  font-size: 12px;
-  color: var(--text-2);
-}
-.verdict ul {
-  margin: 5px 0 0;
-  padding-left: 15px;
-  font-size: 12px;
-  color: var(--text-2);
-}
-.verdict li + li {
-  margin-top: 2px;
-}
+.v-glyph { font-family: var(--mono); font-size: 12px; }
+.v-note { margin: 6px 0 0; font-size: 12px; color: var(--text-2); }
+.verdict ul { margin: 6px 0 0; padding-left: 16px; font-size: 12px; color: var(--text-2); }
+.verdict li + li { margin-top: 3px; }
 
-/* 一致刻意不搶眼，避免養成「看到綠色就按」的反射 */
 .verdict[data-kind="match"] {
-  background: transparent;
-  padding-left: 0;
-  padding-right: 0;
+  background: var(--match-bg);
+  border-color: color-mix(in srgb, var(--match) 22%, transparent);
 }
-.verdict[data-kind="match"] .v-head {
-  color: var(--match);
-  font-weight: 500;
-}
+.verdict[data-kind="match"] .v-head { color: var(--match); font-weight: 600; }
 .verdict[data-kind="noIntent"] {
   background: transparent;
-  padding-left: 0;
-  padding-right: 0;
+  border-color: var(--line-soft);
 }
-.verdict[data-kind="noIntent"] .v-head {
-  color: var(--text-3);
-  font-weight: 500;
-}
+.verdict[data-kind="noIntent"] .v-head { color: var(--text-3); font-weight: 500; }
 .verdict[data-kind="partial"] {
-  background: var(--partial-bg);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--partial);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin: 14px 0 0;
 }
-.verdict[data-kind="partial"] .v-head {
-  color: var(--partial);
-}
+.verdict[data-kind="partial"] .v-head { color: var(--partial); font-weight: 650; }
 .verdict[data-kind="blocked"] {
   background: var(--blocked-bg);
+  border-color: color-mix(in srgb, var(--blocked) 22%, transparent);
 }
-.verdict[data-kind="blocked"] .v-head {
-  color: var(--blocked);
-}
-/* 不一致是這個產品存在的理由，唯一允許搶版面的狀態 */
+.verdict[data-kind="blocked"] .v-head { color: var(--blocked); }
+
+/* ── mismatch：唯一允許搶版面的狀態 ─────────────
+   非模板化 v3：不做圓角色塊（AI 警示框標準答案），也不做滿版紅帶
+   （表單錯誤刻板印象）。改「系統日誌」——近黑沉浸底 + 細紅左邊框
+   + mono 衝突清單，像除錯工具的輸出，不像跳出來的防呆視窗。 */
 .verdict[data-kind="mismatch"] {
-  background: var(--mismatch-bg);
-  box-shadow: inset 2px 0 0 var(--mismatch);
+  background: #141414;
+  border: none;
+  border-left: 3px solid #c2352c;
+  border-radius: 0;
+  margin: 14px 0 0;
+  padding: 13px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 .verdict[data-kind="mismatch"] .v-head {
-  color: var(--mismatch);
-  font-size: 14.5px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: var(--tight);
+  align-items: center; /* SVG icon 是空白 inline-block，baseline 會讓它沉底 */
 }
-
-/* ── 鏈上會發生的 ────────────────────────────────── */
-
-.findings {
+.verdict[data-kind="mismatch"] .v-glyph {
+  width: 17px;
+  height: 17px;
+  display: inline-block;
+  flex: none;
+  font-size: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8695f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M15 9l-6 6'/%3E%3Cpath d='M9 9l6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.verdict[data-kind="mismatch"] ul {
   list-style: none;
   margin: 10px 0 0;
-  padding: 0 0 12px;
+  padding: 8px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #d6d6d2;
+}
+.verdict[data-kind="mismatch"] li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.verdict[data-kind="mismatch"] li::before {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8695f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18'/%3E%3Cpath d='M6 6l12 12'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.verdict[data-kind="mismatch"] li + li { margin-top: 6px; }
+
+@media (prefers-color-scheme: dark) {
+  .verdict[data-kind="mismatch"] {
+    background: #000000;
+    border-left-color: #e8695f;
+    box-shadow: 0 4px 16px rgba(232, 105, 95, 0.15);
+  }
+  .verdict[data-kind="mismatch"] .v-glyph { color: #e8695f; }
+}
+
+/* ── 鏈上會發生的 ──────────────────────────── */
+.findings {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0 0 16px;
 }
 .findings li {
   display: grid;
-  grid-template-columns: 38px 1fr auto;
-  align-items: baseline;
-  gap: 3px 8px;
-  padding: 4px 14px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 16px;
   font-size: 13px;
 }
+.findings li + li { border-top: 1px solid var(--line-soft); }
+
+/* 方向標籤：sentence case 小字（PayBox 式），方向色只做文字色 */
 .findings .cat {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   color: var(--text-4);
+  text-transform: capitalize;
 }
-.findings .cat[data-d="out"] {
-  color: var(--partial);
-}
-.findings .cat[data-d="in"] {
-  color: var(--match);
-}
-.findings .cat[data-d="approval"] {
-  color: var(--mismatch);
-}
+.findings .cat[data-d="out"] { color: var(--partial); }
+.findings .cat[data-d="in"] { color: var(--match); }
+.findings .cat[data-d="approval"] { color: var(--mismatch); }
+.findings .cat[data-d="pending"] { color: var(--blocked); }
 .findings .body {
   min-width: 0;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
-.findings .evidence {
-  grid-column: 1 / -1;
-}
+.findings .evidence { grid-column: 1 / -1; }
 
-/* 依據鍵縮成一個記號，不跟內容搶。文字仍在 aria-label 裡。 */
+/* Evidence 按鈕：ghost 小字，展開時反黑 */
 .srcbtn {
   font: inherit;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 10.5px;
+  font-weight: 500;
   line-height: 1;
-  padding: 3px 5px;
+  padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--text-4);
   cursor: pointer;
-  transition: color 140ms ease, border-color 140ms ease;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
 }
 .srcbtn[aria-expanded="true"] {
-  color: var(--text);
-  border-color: var(--text-4);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 @media (hover: hover) and (pointer: fine) {
-  .srcbtn:hover {
-    color: var(--text-2);
-    border-color: var(--text-4);
-  }
+  .srcbtn:hover { color: var(--text-2); border-color: var(--text-4); }
 }
 
 .evidence {
@@ -492,364 +501,175 @@ summary:focus-visible {
   background: var(--surface-2);
   font-family: var(--mono);
   font-size: 10.5px;
-  line-height: 1.5;
+  line-height: 1.55;
   overflow-x: auto;
   animation: reveal 200ms var(--ease-out);
 }
-.evidence div {
-  display: flex;
-  gap: 8px;
-  white-space: pre;
-}
-.evidence .k {
-  color: var(--text-4);
-  min-width: 62px;
-}
-.evidence .cap {
-  display: block;
-  white-space: normal;
-  font-family: var(--ui);
-  font-size: 10px;
-  color: var(--text-4);
-  margin-bottom: 5px;
-}
-
-/* ── 原始資料分頁 ────────────────────────────────── */
-
-.rawtable {
-  padding: 4px 14px 12px;
-}
-.rawtable .rt {
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r);
-  padding: 8px 10px;
-  margin-top: 6px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  overflow-x: auto;
-}
-.rawtable .rt div {
-  display: flex;
-  gap: 8px;
-  white-space: pre;
-}
-.rawtable .rt .k {
-  color: var(--text-4);
-  min-width: 62px;
-}
-.rawtable .idx {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-4);
-  letter-spacing: 0.06em;
-}
+.evidence div { display: flex; gap: 8px; }
+.evidence .k { color: var(--text-4); flex: none; width: 5em; }
+.evidence .cap { display: block; margin-bottom: 4px; font-size: 10.5px; font-weight: 500; letter-spacing: 0.03em; color: var(--text-4); }
 
 .degraded {
-  margin: 10px 14px 0;
-  padding: 8px 10px;
-  border-radius: var(--r);
-  background: var(--surface-2);
+  margin: 10px 16px 0;
   font-size: 11.5px;
-  color: var(--text-2);
-}
-
-/* ── 頁尾 ────────────────────────────────────────── */
-
-.p-foot {
-  padding: 11px 14px 12px;
-  border-top: 1px solid var(--line-soft);
-}
-.p-foot .actions {
-  display: flex;
-  gap: 7px;
-}
-.p-foot button {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: var(--tight);
-  padding: 9px 14px;
+  color: var(--text-3);
+  padding: 6px 10px;
+  border: 1px dashed var(--line);
   border-radius: var(--r);
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--text-2);
-  cursor: pointer;
-  transition: transform 140ms var(--ease-out), background-color 140ms ease;
-}
-.p-foot button:active {
-  transform: scale(0.97);
-}
-.p-foot .sign {
-  flex: 1;
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--on-accent);
-}
-.p-foot .sign[disabled] {
-  background: var(--surface-2);
-  border-color: var(--line);
-  color: var(--text-4);
-  cursor: not-allowed;
-}
-.p-foot .sign[disabled]:active {
-  transform: none;
 }
 
-/* 指紋是要被人比對的東西，給它 mono 與字距，不要縮成註腳 */
+/* ── 頁尾 ────────────────────────────────── */
+.p-foot { padding: 12px 16px 14px; border-top: 1px solid var(--line-soft); }
+
 .fp {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 9px;
-  padding: 7px 10px;
-  border-radius: var(--r);
-  background: var(--surface-2);
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--line);
 }
 .fp .k {
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   color: var(--text-4);
 }
 .fp .v {
   font-family: var(--mono);
-  font-size: 12.5px;
-  letter-spacing: 0.08em;
-  color: var(--text);
-}
-
-/*
- * 免責那三段是這個產品的誠實層，不能刪，但也不該預設佔掉半個面板。
- * 收在 disclosure 後面，預設只留一句話講機器驗了什麼。
- */
-.notes {
-  margin-top: 9px;
-}
-.notes > summary {
-  font-size: 11px;
-  color: var(--text-3);
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  transition: color 140ms ease;
-}
-.notes > summary::-webkit-details-marker {
-  display: none;
-}
-.notes > summary::after {
-  content: "＋";
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--text-4);
-}
-.notes[open] > summary::after {
-  content: "−";
-}
-@media (hover: hover) and (pointer: fine) {
-  .notes > summary:hover {
-    color: var(--text-2);
-  }
-}
-.notes[open] .notes-body {
-  animation: reveal 200ms var(--ease-out);
-}
-.notes .handoff {
-  margin: 7px 0 0;
-  font-size: 11px;
-  line-height: 1.55;
-  color: var(--text-3);
-}
-.notes code {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--text-2);
-}
-
-/* ── 交接退路 ────────────────────────────────────── */
-
-.handoff-fallback {
-  margin-bottom: 10px;
-  padding: 10px 11px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--surface-2);
-}
-.handoff-fallback[data-kind="blocked"] {
-  border-color: var(--partial);
-  background: var(--partial-bg);
-}
-.handoff-fallback .note {
-  margin: 0 0 6px;
   font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
   color: var(--text-2);
 }
-.handoff-fallback .note.tiny {
-  margin: 6px 0 0;
-  font-size: 10.5px;
-  color: var(--text-4);
-}
-.handoff-fallback .handoff-url {
-  width: 100%;
-  font-family: var(--mono);
-  font-size: 10px;
-  line-height: 1.4;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--text-2);
-  resize: vertical;
-  word-break: break-all;
-}
-.handoff-fallback .handoff-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-.handoff-fallback .copy-handoff,
-.handoff-fallback .open-handoff {
+
+/* 全黑主按鈕（PayBox 式） */
+.actions { display: flex; gap: 8px; }
+.actions button {
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 6px 11px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--text);
+  padding: 8px 16px;
+  border-radius: var(--r);
   cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  transition: transform 140ms var(--ease-out);
+  transition: transform 120ms var(--ease-out), background 140ms ease, box-shadow 140ms ease;
 }
-.handoff-fallback .copy-handoff:active,
-.handoff-fallback .open-handoff:active {
-  transform: scale(0.97);
-}
-.handoff-fallback .open-handoff {
+.actions .sign {
   background: var(--accent);
-  border-color: transparent;
+  border: 1px solid var(--accent);
   color: var(--on-accent);
 }
-
-/* ── 狀態 ────────────────────────────────────────── */
-
-.loading,
-.failed {
-  padding: 20px 14px;
-  text-align: center;
-  color: var(--text-3);
-  font-size: 12.5px;
+@media (hover: hover) and (pointer: fine) {
+  .actions .sign:not(:disabled):hover { background: var(--accent-hover); }
 }
-.failed {
-  color: var(--mismatch);
+.actions .sign:not(:disabled):active { transform: translateY(1px); }
+.actions .sign:disabled {
+  background: var(--surface-3);
+  border-color: var(--surface-3);
+  color: var(--text-4);
+  cursor: not-allowed;
 }
-
-/* ── 動態 ────────────────────────────────────────── */
-
-/*
- * 進場只做一次，而且只在有 receipt 的那幾行 stagger。
- * 面板是「看一眼決定簽不簽」的東西，不是可以慢慢欣賞的頁面，
- * 所以位移很小、時間短，目的是把視線帶到證據上，不是表演。
- */
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(-3px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.actions .cancel {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .actions .cancel:hover { border-color: var(--text-3); }
 }
 
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.notes { margin-top: 10px; }
+.notes > summary {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-4);
+  cursor: pointer;
+  list-style: none;
+}
+.notes > summary::-webkit-details-marker { display: none; }
+.notes[open] > summary { color: var(--text-3); }
+.notes-body { margin-top: 6px; font-size: 11.5px; color: var(--text-3); }
+.notes-body .handoff { margin: 4px 0 0; }
+
+/* ── 原始資料分頁 ─────────────────────────── */
+.rawtable { padding-bottom: 10px; }
+.rt {
+  margin: 0 16px 8px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.rt div { display: flex; gap: 8px; }
+.rt .idx { color: var(--text-4); }
+.rt .k { color: var(--text-4); flex: none; width: 7em; }
+
+.who { padding: 12px 16px 0; font-size: 11px; color: var(--text-3); }
+.who .dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 5px;
 }
 
-.p-body[data-enter="1"] .block,
-.p-body[data-enter="1"] .verdict,
-.p-body[data-enter="1"] .findings li {
-  animation: rise 260ms var(--ease-out) backwards;
-}
-.p-body[data-enter="1"] .verdict {
-  animation-delay: 60ms;
-}
-.p-body[data-enter="1"] .findings li:nth-child(1) {
-  animation-delay: 110ms;
-}
-.p-body[data-enter="1"] .findings li:nth-child(2) {
-  animation-delay: 150ms;
-}
-.p-body[data-enter="1"] .findings li:nth-child(3) {
-  animation-delay: 190ms;
-}
-.p-body[data-enter="1"] .findings li:nth-child(n + 4) {
-  animation-delay: 230ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-delay: 0ms !important;
-    transition-duration: 1ms !important;
-  }
-}
-
-/* 可編輯的參數（host 支援 serverTools 時才出現） */
-.params .pedit {
-  width: 100%;
+.pedit {
   font: inherit;
   font-family: var(--mono);
-  font-size: 11.5px;
-  padding: 4px 7px;
+  font-size: 12px;
+  width: 100%;
+  padding: 3px 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--text);
 }
-.params .pedit:disabled {
-  color: var(--text-3);
-  cursor: not-allowed;
-}
+.pedit:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+
 .resim {
   margin-top: 8px;
   font: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-radius: var(--r-sm);
+  background: var(--surface);
   border: 1px solid var(--line);
-  background: transparent;
-  color: var(--text);
+  color: var(--text-2);
   cursor: pointer;
-  transition: transform 140ms var(--ease-out);
 }
-.resim:active {
-  transform: scale(0.97);
+.resim-note { margin: 4px 0 0; font-size: 10.5px; color: var(--text-4); }
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
 }
-.resim:disabled {
-  color: var(--text-3);
-  cursor: not-allowed;
+
+/* ── 細微動畫（Vercel camp：全 ease-out + 小位移 ≤4px）────────
+   面板每次整段重畫（情境切換/展開），動畫在重畫時自然重播。 */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
 }
-.resim:disabled:active {
-  transform: none;
-}
-.resim-note {
-  margin: 5px 0 0;
-  font-size: 10.5px;
-  color: var(--text-3);
+.verdict { animation: rise 240ms var(--ease-out); }
+.findings li { animation: rise 220ms var(--ease-out) both; }
+.findings li:nth-child(2) { animation-delay: 35ms; }
+.findings li:nth-child(3) { animation-delay: 70ms; }
+.findings li:nth-child(4) { animation-delay: 105ms; }
+.findings li:nth-child(5) { animation-delay: 140ms; }
+.findings li:nth-child(6) { animation-delay: 175ms; }
+.p-head, .tabs, .block, .p-foot { animation: rise 200ms var(--ease-out) both; }
+
+/* 尊重系統動畫偏好：reduced-motion 一律靜止（信任產品的基本禮貌） */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

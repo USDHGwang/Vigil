@@ -39,35 +39,35 @@ interface Scenario {
 const LIVE_CASES: { key: string; label: string; request: SimulateRequest }[] = [
   {
     key: "liveStake",
-    label: "質押（真實模擬）",
+    label: "Stake (live sim)",
     request: {
       account: ACCOUNT,
       protocol: "shmonad",
       method: "stake",
       params: { amount: "0.25", receiver: ACCOUNT },
-      statedRequest: "幫我質押 0.25 MON",
+      statedRequest: "Stake 0.25 MON",
     },
   },
   {
     key: "liveBlocked",
-    label: "模擬失敗（真實）",
+    label: "Simulation failed (live)",
     request: {
       account: ACCOUNT,
       protocol: "shmonad",
       method: "unstake",
       params: { shares: "1", receiver: ACCOUNT, owner: ACCOUNT },
-      statedRequest: "幫我贖回 1 shMON",
+      statedRequest: "Unstake 1 shMON",
     },
   },
 ];
 
 /** 這幾種現場產不出來（需要真的惡意交易），用備好的資料呈現 */
 const FIXTURE_CASES: { key: keyof typeof allFixtures; label: string }[] = [
-  { key: "approveMismatch", label: "無上限授權（不一致）" },
-  { key: "operatorApprovalMismatch", label: "整批交出 NFT 系列（不一致）" },
-  { key: "unstakePartial", label: "贖回（部分不符）" },
-  { key: "blockedByBalance", label: "餘額不夠（有效果但不能簽）" },
-  { key: "noAdapterModeB", label: "無解讀模組" },
+  { key: "approveMismatch", label: "Unlimited approval (mismatch)" },
+  { key: "operatorApprovalMismatch", label: "Batch NFT grant (mismatch)" },
+  { key: "unstakePartial", label: "Unstake (partial)" },
+  { key: "blockedByBalance", label: "Insufficient balance (blocked)" },
+  { key: "noAdapterModeB", label: "No decoder" },
 ];
 
 const scenarios: Record<string, Scenario> = {};
@@ -82,8 +82,48 @@ for (const item of LIVE_CASES) {
   }
 }
 
+/**
+ * mock 是設計檢視工具，一律用英文展示（demo 畫面）。
+ * fixtures 的文案是 zh-TW（它是 zh 渲染的測試資料支柱，不能動），
+ * 所以在建置層做一份 mock 專用英文化——只改展示欄位，不碰產品。
+ */
+function translateForMock(view: EvidencePanelView): EvidencePanelView {
+  const v: EvidencePanelView = { ...view, locale: "en" };
+  if (v.intent !== null) {
+    v.intent = { ...v.intent, text: EN[v.intent.text] ?? v.intent.text };
+  }
+  if (v.verdict.kind === "partial") {
+    v.verdict = { ...v.verdict, reason: EN[v.verdict.reason] ?? v.verdict.reason };
+  }
+  if (v.verdict.kind === "mismatch") {
+    v.verdict = { ...v.verdict, conflicts: v.verdict.conflicts.map((c) => EN[c] ?? c) };
+  }
+  if (v.verdict.kind === "blocked") {
+    v.verdict = { ...v.verdict, warnings: v.verdict.warnings.map((w) => ({ ...w, message: EN[w.message] ?? w.message })) };
+  }
+  return v;
+}
+
+/** fixtures 中文文案 → mock 英文展示 */
+const EN: Record<string, string> = {
+  "幫我質押 0.25 MON": "Stake 0.25 MON",
+  "幫我質押 10 MON": "Stake 10 MON",
+  "幫我贖回 1 shMON": "Unstake 1 shMON",
+  "幫我贖回 5 shMON": "Unstake 5 shMON",
+  "把那個 NFT 轉去我另一個錢包": "Move that NFT to my other wallet",
+  "這筆交易不會讓 MON 現在回到你的帳戶，贖回要等協議的解鎖流程走完":
+    "MON doesn't come back to your account in this transaction — unstaking waits for the protocol's unlock flow",
+  "沒有任何 MON 被質押": "No MON gets staked",
+  "多出一筆無上限授權給 0x9F2c…a41b，它不是這個操作指定的對象":
+    "An unlimited approval to 0x9F2c…a41b — not the account this operation targets",
+  "多出一筆整批授權：0x9F2c…a41b 可以轉走你在 0x5C7d…1C3e 這個系列裡的每一個，它不是這個操作指定的對象":
+    "A collection-wide grant: 0x9F2c…a41b can move every token you hold in 0x5C7d…1C3e — not the account this operation targets",
+  "餘額不夠。你有 ~9.087640 MON，這筆需要 ~10.015862 MON（其中約 ~0.015862 MON 是手續費）,差 ~0.928222 MON。照這樣送出去會失敗，手續費照樣扣。":
+    "Insufficient balance. You have ~9.087640 MON, this needs ~10.015862 MON (about ~0.015862 MON in gas), short by ~0.928222 MON. Sending it as-is will fail and the gas is still charged.",
+};
+
 for (const item of FIXTURE_CASES) {
-  scenarios[item.key] = { label: item.label, live: false, view: allFixtures[item.key] };
+  scenarios[item.key] = { label: item.label, live: false, view: translateForMock(allFixtures[item.key]) };
 }
 
 const bundled = await build({

@@ -194,7 +194,7 @@ function paletteFor(options: TextRenderOptions): Palette {
   return {
     title: 1, // bold 標題行
     verdict: null, // verdict 由語義色決定，這裡留 null 給個別行覆蓋
-    section: 96, // 「agent 說你要求的」「鏈上會發生的」段落標題：亮青
+    section: 96, // 「要求」「鏈上行為」段落標題：亮青
     muted: 90, // 免責、註腳：灰
     frame: 90, // 分隔線：灰（mismatch 的 ═ 框會覆蓋成紅）
     strong: 1,

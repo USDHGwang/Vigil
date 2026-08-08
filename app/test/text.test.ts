@@ -77,7 +77,7 @@ describe("每個情境都渲染得出來", () => {
   it.each(names)("%s 有內容且有結論", (name) => {
     const text = renderText(allFixtures[name]);
     expect(text.length).toBeGreaterThan(120);
-    expect(text).toContain("鏈上會發生的");
+    expect(text).toContain("鏈上行為");
     expect(text).toContain("簽名前檢查");
   });
 

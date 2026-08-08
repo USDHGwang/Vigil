@@ -32,7 +32,7 @@ describe("每個 fixture 都渲染得出來", () => {
   it.each(names)("%s 的結論分頁不是空的", (name) => {
     const html = renderBody(allFixtures[name], opts);
     expect(html.length).toBeGreaterThan(100);
-    expect(html).toContain("鏈上會發生的");
+    expect(html).toContain("鏈上行為");
   });
 
   it.each(names)("%s 的原始資料分頁不是空的", (name) => {

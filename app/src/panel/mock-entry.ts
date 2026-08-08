@@ -45,9 +45,13 @@ function paint(): void {
   }
   const view = scenario.view;
 
+  // mock 是設計檢視工具：一律用 en 渲染（demo 畫面），不照各情境的 locale。
+  // zh 渲染效果由 fixtures.test / i18n keyset assert 把關。
+  const demoView: EvidencePanelView = { ...view, locale: "en" };
+
   root.innerHTML = `
     <div class="harness">
-      <span class="tag">情境</span>
+      <span class="tag">Scenarios</span>
       ${names
         .map(
           (name) =>
@@ -60,22 +64,22 @@ function paint(): void {
 
     <p class="provenance">${
       scenario.live
-        ? "這一筆是對 Monad 主網真實模擬跑出來的資料。"
-        : "這一筆是備好的資料，用來呈現現場產不出來的情況。"
+        ? "This view is from a real Monad mainnet simulation."
+        : "Prepared data for states a live demo can't produce."
     }</p>
 
     <div class="panel">
       <div class="p-head">
         <span class="mark">${LOGOMARK_SVG}</span>
-        <span class="name">${t(view.locale ?? "zh-TW", "panel_name")}</span>
-        <span class="src"><span class="live"></span>${t(view.locale ?? "zh-TW", "panel_source")}</span>
+        <span class="name">${t(demoView.locale, "panel_name")}</span>
+        <span class="src"><span class="live"></span>${t(demoView.locale, "panel_source")}</span>
       </div>
       <div class="tabs" role="tablist">
-        <button role="tab" data-tab="summary" aria-selected="${state.tab === "summary"}">${t(view.locale ?? "zh-TW", "tab_summary")}</button>
-        <button role="tab" data-tab="raw" aria-selected="${state.tab === "raw"}">${t(view.locale ?? "zh-TW", "tab_raw")}</button>
+        <button role="tab" data-tab="summary" aria-selected="${state.tab === "summary"}">${t(demoView.locale, "tab_summary")}</button>
+        <button role="tab" data-tab="raw" aria-selected="${state.tab === "raw"}">${t(demoView.locale, "tab_raw")}</button>
       </div>
-      <div class="p-body">${renderBody(view, { tab: state.tab, openSource: state.openSource })}</div>
-      <div class="p-foot">${renderFooter(view)}</div>
+      <div class="p-body">${renderBody(demoView, { tab: state.tab, openSource: state.openSource })}</div>
+      <div class="p-foot">${renderFooter(demoView)}</div>
     </div>`;
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("[data-scenario]")) {

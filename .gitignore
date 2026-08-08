@@ -40,3 +40,4 @@ tunnel_url.txt
 mcp_tunnel_url.txt
 .vercel
 .env*
+sketches/

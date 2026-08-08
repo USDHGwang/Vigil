@@ -43,8 +43,8 @@ const en: Dict = {
   kind_nativeTransfer: "transfer",
   kind_event: "event",
 
-  section_intent: "What the agent says you asked for",
-  section_evidence: "What happens on-chain",
+  section_intent: "Requested",
+  section_evidence: "On-chain",
 
   no_intent:
     "This transaction came in from outside; there is no request to compare it against, so it is shown as-is, without comparison.",
@@ -126,7 +126,7 @@ const en: Dict = {
   sign_fail_title: "Can't continue",
   tx_fallback: "this transaction",
   panel_name: "Vigil · Pre-sign check",
-  panel_source: "Monad mainnet simulation",
+  panel_source: "Mainnet simulation",
   tab_summary: "Conclusion",
   tab_raw: "Raw data",
   loading: "Simulating this transaction against Monad mainnet…",
@@ -204,7 +204,7 @@ const zhCN: Dict = {
     "Vigil · 签名前检查 · 证据来自 Monad 主网模拟，不是来自准备这笔交易的程序",
 
   verdict_match: "没有发现意料外的动作",
-  verdict_partial: "有需要你确认的地方",
+  verdict_partial: "需要你确认",
   verdict_mismatch: "交易内容跟这个操作对不上",
   verdict_noIntent: "没有可以对照的东西",
   verdict_blocked: "这笔不能签",
@@ -217,8 +217,8 @@ const zhCN: Dict = {
   kind_nativeTransfer: "转账",
   kind_event: "事件",
 
-  section_intent: "agent 说你要求的",
-  section_evidence: "链上会发生的",
+  section_intent: "要求",
+  section_evidence: "链上行为",
 
   no_intent: "这笔交易从外部来，没有可以对照的要求，只呈现结果、不做对照。",
   you_self: "你自己",
@@ -292,7 +292,7 @@ const zhCN: Dict = {
   sign_fail_title: "没办法继续",
   tx_fallback: "这笔交易",
   panel_name: "Vigil · 签名前检查",
-  panel_source: "Monad 主网模拟",
+  panel_source: "主网模拟",
   tab_summary: "结论",
   tab_raw: "原始数据",
   loading: "正在对 Monad 主网模拟这笔交易…",
@@ -366,7 +366,7 @@ const zhTW: Dict = {
     "Vigil · 簽名前檢查 · 證據來自 Monad 主網模擬，不是來自準備這筆交易的程式",
 
   verdict_match: "沒有發現意料外的動作",
-  verdict_partial: "有需要你確認的地方",
+  verdict_partial: "需要你確認",
   verdict_mismatch: "交易內容跟這個操作對不上",
   verdict_noIntent: "沒有可以對照的東西",
   verdict_blocked: "這筆不能簽",
@@ -379,8 +379,8 @@ const zhTW: Dict = {
   kind_nativeTransfer: "轉帳",
   kind_event: "事件",
 
-  section_intent: "agent 說你要求的",
-  section_evidence: "鏈上會發生的",
+  section_intent: "要求",
+  section_evidence: "鏈上行為",
 
   no_intent: "這筆交易從外部來，沒有可以對照的要求，只呈現結果、不做對照。",
   you_self: "你自己",
@@ -454,7 +454,7 @@ const zhTW: Dict = {
   sign_fail_title: "沒辦法繼續",
   tx_fallback: "這筆交易",
   panel_name: "Vigil · 簽名前檢查",
-  panel_source: "Monad 主網模擬",
+  panel_source: "主網模擬",
   tab_summary: "結論",
   tab_raw: "原始資料",
   loading: "正在對 Monad 主網模擬這筆交易…",
