@@ -407,9 +407,11 @@ export default function TxShowcase() {
                   className="w-[340px] rounded-2xl border border-[rgba(255,255,255,0.13)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] px-5 py-4 shadow-[0_0_50px_rgba(61,92,255,0.16),inset_0_1px_0_rgba(255,255,255,0.08)]"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,rgba(0,82,255,0.9),rgba(61,92,255,0.55))] text-[12px] font-semibold text-white shadow-[0_0_16px_rgba(0,82,255,0.5)]">
-                      V
-                    </div>
+                    <img
+                      src="/vigil-mark.svg"
+                      alt="Vigil"
+                      className="mt-0.5 h-8 w-8 shrink-0 drop-shadow-[0_0_16px_rgba(0,82,255,0.5)]"
+                    />
                     <div>
                       <p className="mt-1 text-[16px] font-normal tracking-[-0.01em] text-[var(--color-ink)]">
                         &ldquo;{s.bubble}&rdquo;
@@ -434,7 +436,7 @@ export default function TxShowcase() {
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="grid h-5 w-5 place-items-center rounded-[6px] bg-[rgba(0,82,255,0.25)] text-[11px] text-[#8ab4ff]">
-                        ◈
+                        ⇄
                       </span>
                       <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink-3)]">
                         Transaction
@@ -497,9 +499,11 @@ export default function TxShowcase() {
                   className="flex items-center justify-between rounded-[10px] border border-[rgba(255,255,255,0.16)] bg-[rgba(14,16,22,0.96)] px-5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(0,0,0,0.4)]"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="grid h-4 w-4 place-items-center rounded-[4px] bg-[rgba(0,82,255,0.3)] text-[10px] text-[#8ab4ff]">
-                      ◈
-                    </span>
+                    <img
+                      src="/monad-mark.png"
+                      alt="Monad"
+                      className="h-4 w-4"
+                    />
                     <span className="font-mono text-[11px] tracking-[0.1em] text-[var(--color-ink)]">
                       MONAD NODE
                     </span>
