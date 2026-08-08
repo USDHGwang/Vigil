@@ -9,5 +9,5 @@ compatibility_flags = ["nodejs_compat"]
 
 # 環境變數（nodejs_compat 讓 process.env 反映 vars）
 [vars]
-PUBLIC_URL = "https://vigil-mcp.<subdomain>.workers.dev"
+PUBLIC_URL = "https://vigil-mcp.usdhgwang.workers.dev"
 ALLOWED_ORIGINS = "https://claude.ai,https://claude.com,https://chatgpt.com,https://cursor.sh"
