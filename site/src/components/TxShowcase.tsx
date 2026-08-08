@@ -1,5 +1,7 @@
 "use client";
 
+import Logo from "@/components/Logo";
+
 /**
  * TxShowcase — 一筆交易被看顧的旅程（GSAP ScrollTrigger 版 · v4）。
  *
@@ -407,11 +409,9 @@ export default function TxShowcase() {
                   className="w-[340px] rounded-2xl border border-[rgba(255,255,255,0.13)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] px-5 py-4 shadow-[0_0_50px_rgba(61,92,255,0.16),inset_0_1px_0_rgba(255,255,255,0.08)]"
                 >
                   <div className="flex items-start gap-3">
-                    <img
-                      src="/vigil-mark.svg"
-                      alt="Vigil"
-                      className="mt-0.5 h-8 w-8 shrink-0 drop-shadow-[0_0_16px_rgba(0,82,255,0.5)]"
-                    />
+                    <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,rgba(0,82,255,0.9),rgba(61,92,255,0.55))] shadow-[0_0_16px_rgba(0,82,255,0.5)]">
+                      <Logo className="h-[15px] w-auto text-white" />
+                    </div>
                     <div>
                       <p className="mt-1 text-[16px] font-normal tracking-[-0.01em] text-[var(--color-ink)]">
                         &ldquo;{s.bubble}&rdquo;
