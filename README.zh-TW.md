@@ -154,9 +154,9 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | MCP server + UI resource：MCP Apps 面板（Claude Desktop、claude.ai）+ CLI host 的 ANSI 文字 | 完成 |
 | 簽名交回錢包——兩頁同一串指紋、篡改路徑瀏覽器實測、2026-08-07 主網端到端實送 | 完成 |
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
-| 部署——介紹站 [vigilapp.vercel.app](https://vigilapp.vercel.app)、簽名頁 [usdhgwang.github.io/Vigil/sign/](https://usdhgwang.github.io/Vigil/sign/)（`pages.yml`）；MCP server 本身仍是本機 + 隧道 | 部分 |
+| 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、介紹站 [vigilapp.vercel.app](https://vigilapp.vercel.app)、簽名頁 worker 的 `/sign` 與 [usdhgwang.github.io/Vigil/sign/](https://usdhgwang.github.io/Vigil/sign/) 兩處都有 | 完成 |
 
-`pnpm check`：**355 tests**。`MOSS_SKIP_E2E=1` 之下 329 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。詳細狀態、決定紀錄、風險維護在內部文件。
+`pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。詳細狀態、決定紀錄、風險維護在內部文件。
 
 ### 自己驗過的（非文件轉述）
 
@@ -169,7 +169,7 @@ Monad 主網支援 EIP-7702：帶 authorization 的交易 gas 比對照組多 25
 ```bash
 cd app
 pnpm install          # 會自動建 vendor 裡的 Moss，不需要外部 checkout
-pnpm check            # typecheck + 355 tests（MOSS_SKIP_E2E=1 只跑離線的 329 條）
+pnpm check            # typecheck + 364 tests（MOSS_SKIP_E2E=1 只跑離線的 338 條）
 pnpm demo             # 終端機直接看面板，不需要任何 host
 pnpm demo injection   # 看被注入指令的那一幕
 pnpm build:all        # 面板、簽名頁、預覽頁、MCP server
