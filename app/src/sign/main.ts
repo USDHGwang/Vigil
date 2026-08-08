@@ -171,6 +171,10 @@ function load(): void {
     const fragment = location.hash.slice(1);
     if (fragment === "") throw new Error("網址裡沒有交易資料。這一頁要從面板開啟。");
     payload = decodeHandoff(fragment);
+    // paint 也放進 try：它會走 formatValue（BigInt）與 calldata 解碼，兩者都吃
+    // 網址裡的值。丟在外面的話一個畸形 payload 會讓整頁變白，連 renderFailure
+    // 都跑不到——使用者看到的是「壞了」而不是「這串網址有問題」。
+    paint({ kind: "checking" }, at);
   } catch (error) {
     payload = undefined;
     if (root !== null) {
@@ -178,7 +182,6 @@ function load(): void {
     }
     return;
   }
-  paint({ kind: "checking" }, at);
   void boot(at);
 }
 

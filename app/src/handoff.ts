@@ -87,6 +87,32 @@ export function encodeHandoff(payload: HandoffPayload): string {
   return base64UrlEncode(JSON.stringify(payload));
 }
 
+const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+const HEX_RE = /^0x[0-9a-fA-F]*$/;
+
+/**
+ * 每一筆交易的欄位形狀。
+ *
+ * 這個函式是簽名頁對外的唯一入口，網址裡的東西完全不可信。不驗形狀的話
+ * `value: "not-a-number"` 會一路過關（fingerprintOf 只做 `.toLowerCase()`），
+ * 到渲染時才在 `BigInt()` 炸開——那時候已經在 try 外面，使用者拿到的是白畫面。
+ * 在邊界擋掉，錯誤訊息才控制得住。
+ */
+function assertTransactionShape(tx: unknown, index: number): void {
+  const at = `第 ${index + 1} 筆交易`;
+  if (tx === null || typeof tx !== "object") throw new Error(`${at}不是一筆交易`);
+  const { from, to, value, data } = tx as Record<string, unknown>;
+  if (typeof from !== "string" || !ADDRESS_RE.test(from)) throw new Error(`${at}的 from 不是位址`);
+  if (typeof to !== "string" || !ADDRESS_RE.test(to)) throw new Error(`${at}的 to 不是位址`);
+  if (typeof data !== "string" || !HEX_RE.test(data)) throw new Error(`${at}的 data 不是 hex`);
+  if (typeof value !== "string") throw new Error(`${at}的 value 不是字串`);
+  try {
+    if (BigInt(value) < 0n) throw new Error("negative");
+  } catch {
+    throw new Error(`${at}的 value 不是合法金額`);
+  }
+}
+
 export function decodeHandoff(encoded: string): HandoffPayload {
   let parsed: HandoffPayload;
   try {
@@ -97,6 +123,12 @@ export function decodeHandoff(encoded: string): HandoffPayload {
   }
   if (!Array.isArray(parsed.transactions) || parsed.transactions.length === 0) {
     throw new Error("交接資料裡沒有交易");
+  }
+  parsed.transactions.forEach(assertTransactionShape);
+  // summary 是產生網址的人自己填的字，簽名頁會顯示它。型別不對就不顯示，
+  // 不要讓一個物件被 String() 成 "[object Object]" 之後看起來像一句說明。
+  if (parsed.summary !== undefined && typeof parsed.summary !== "string") {
+    throw new Error("交接資料的說明欄位格式不對");
   }
   // 這一頁只簽 Monad 主網。鏈不對就不是我們產的交接，直接擋。
   if (parsed.chainId !== MONAD_CHAIN_ID) {
