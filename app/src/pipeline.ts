@@ -409,6 +409,31 @@ export function structuralVerdict(
     };
   }
 
+  /**
+   * 剩下的授權：對象在 `known` 裡，額度也沒到無上限門檻。
+   *
+   * **這種情況不能回 match。** `known` 是 `addressesInIntent` 從 request.params
+   * 掃出來的，而 params 是 agent 給的——被注入的 agent 只要把攻擊者地址填進
+   * spender、額度壓在門檻以下（2^96-1 對 18 位小數代幣是 790 億顆，遠超任何
+   * 真實需求），rule 1 與 rule 4 就都不會觸發，面板會顯示 ✓「沒有發現意料外的
+   * 動作」並且可簽。機器在這裡真正驗到的只有「交易做的事對得上 agent 呼叫的
+   * 操作」，那句話撐不起一個綠勾。
+   *
+   * 所以：**任何把餘額交給發送者以外的人的授權，至少是 partial。** 授權給自己
+   * 是 no-op，不算。額度大小由人判斷，效果清單裡有數字。
+   */
+  const toOthers = approvals.filter(
+    (a) => a.spender.toLowerCase() !== request.account.toLowerCase(),
+  );
+  if (toOthers.length > 0) {
+    const who = [...new Set(toOthers.map((a) => shortWho(a.spender)))].join("、");
+    const what = [...new Set(toOthers.map((a) => shortWho(a.token)))].join("、");
+    return {
+      kind: "partial",
+      reason: t(locale, "reason_approval_named", { who, what }),
+    };
+  }
+
   if (receipt === null) {
     return {
       kind: "partial",

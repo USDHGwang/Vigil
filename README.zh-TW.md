@@ -82,7 +82,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 支援 MCP Apps 的 host 把 ⑤ 渲染成面板；CLI agent 拿到內容等價的文字面板。
 
 ④ 裡面的 `verifyReceiptCoverage` 是完整性檢查，不是意圖比對：它驗報告與原始變動一一對應，
-數量相等且逐筆做物件身分比對，防漏、防重複、防捏造。意圖比對是下面那五條規則。
+數量相等且逐筆做物件身分比對，防漏、防重複、防捏造。意圖比對是下面那六條規則。
 
 ### 兩層比對
 
@@ -93,13 +93,19 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 
 語意層不交給 LLM 判斷。那個 LLM 讀同一批內容，一樣可被注入，信任會繞回原點。改成把兩者並排給人看。
 
-結構層有五條規則，**都不需要 per-protocol 知識**：
+結構層有六條規則，**都不需要 per-protocol 知識**：
 
 1. 出現這個操作沒指定的授權對象（ERC-20 額度、ERC-721 單顆授權、NFT 整批授權都算）
 2. receipt 的 operation 對不上呼叫的 method
 3. 任何 `setApprovalForAll`（整個系列的轉移權，含你以後才拿到的）
 4. 任何無上限 ERC-20 授權
-5. 沒有解讀模組就誠實說比不了，不猜
+5. 任何給發送者以外對象的授權，不論額度大小
+6. 沒有解讀模組就誠實說比不了，不猜
+
+第 5 條存在，是因為第 1 條做不到的那一半。「這個操作沒指定的對象」是拿 agent 傳來的參數判斷的，
+而 agent 正是我們假設不可信的那一方。被注入的 agent 只要把攻擊者填進 `spender`、額度壓在無上限
+門檻以下，第 1 條與第 4 條都不觸發——第 5 條之前，那種情況會拿到綠勾。現在把餘額交給別人一律
+至少是「要你看一眼」。它不擋簽名，授權給自己也照樣算乾淨。
 
 ### 簽名怎麼交回你的錢包
 
@@ -113,24 +119,44 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 
 簽名頁還會比對錢包當下的帳戶——不是這筆交易的發起人就不讓簽。
 
+### 簽名頁不預設你是從哪裡來的
+
+這一頁託管在固定網址、只讀 fragment，所以任何人都做得出一個指向它的連結。上面那套指紋比對，
+對「從來沒看過面板」的使用者沒有用——寫那串連結的人也寫了那串指紋。
+
+所以這一頁自己解一件事出來。它用 viem 在本機解 calldata（`approve`、`setApprovalForAll`、
+`increaseAllowance`、ERC-2612 `permit`、Permit2、`transferFrom`），把那段位元組做什麼印在交易明細
+上面，不依賴網址裡的那句說明。認不得的 selector 明講認不得，因為沉默會被讀成「沒問題」。
+這一頁也不掛「主網模擬」徽章——面板掛得起是因為它渲染的是 `debug_traceCall` 的結果，這一頁
+什麼都沒模擬。解出授權時也不會自動叫錢包，避免點一個連結就直接跳出簽名框。
+
 ## 兩個講清楚的邊界
 
 **這個產品驗一致性，不驗安全性。** agent 誠實宣告一件有害的事並如實執行，我們會正確回報一致。
 
 **stated intent 與 account 都是 agent 傳來的未經驗證輸入。** 介面標籤寫「agent 說你要求的」，不寫「你要求的」；帳戶那行明講「這個地址是 agent 給的，我們沒驗過」。
 
+**我們只看得到交易，而且只透過事件看。** 兩個限制從這裡來，都不是打算在這個形狀裡修的 bug：
+
+- *簽章釣魚不在射程內。* `permit`、Permit2 的 `PermitSingle`、Seaport 訂單——使用者用
+  `eth_signTypedData_v4` 簽的是 typed data，根本沒有交易產生，這條管線收不到也模擬不了。
+  上面引的 Scam Sniffer 數字涵蓋各種 drainer 包含這一類，我們不宣稱處理得了那整個數字。
+- *不發事件的授權看不見。* Moss 把模擬結果報成事件與原生轉帳，沒有 storage diff。合約不發
+  `Approval` 就寫額度，結構上規則偵測不到；Permit2 的鏈上授權事件簽章跟 ERC-20 不同，事件掃描
+  也對不上。簽名頁那層會解 calldata 裡的 Permit2 `approve`，涵蓋直接呼叫，不涵蓋包在別的合約裡的。
+
 ## 現在做到哪
 
 | 項目 | 狀態 |
 |---|---|
 | 資料契約、情境 fixtures、面板渲染（純函式）、人話轉換層 | 完成 |
-| 真實模擬管線（對主網 debug_traceCall）、五條結構規則、真實餘額檢查 | 完成 |
+| 真實模擬管線（對主網 debug_traceCall）、六條結構規則、真實餘額檢查 | 完成 |
 | MCP server + UI resource：MCP Apps 面板（Claude Desktop、claude.ai）+ CLI host 的 ANSI 文字 | 完成 |
 | 簽名交回錢包——兩頁同一串指紋、篡改路徑瀏覽器實測、2026-08-07 主網端到端實送 | 完成 |
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
-| 部署——site 已上線 [vigilapp.vercel.app](https://vigilapp.vercel.app)；MCP server 本機 + 隧道，正式部署待辦 | 部分 |
+| 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、介紹站 [vigilapp.vercel.app](https://vigilapp.vercel.app)、簽名頁 worker 的 `/sign` 與 [usdhgwang.github.io/Vigil/sign/](https://usdhgwang.github.io/Vigil/sign/) 兩處都有 | 完成 |
 
-`pnpm check`：**336 tests**，含對 Monad 主網的實跑。詳細狀態、決定紀錄、風險維護在內部文件。
+`pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。詳細狀態、決定紀錄、風險維護在內部文件。
 
 ### 自己驗過的（非文件轉述）
 
@@ -143,7 +169,7 @@ Monad 主網支援 EIP-7702：帶 authorization 的交易 gas 比對照組多 25
 ```bash
 cd app
 pnpm install          # 會自動建 vendor 裡的 Moss，不需要外部 checkout
-pnpm check            # typecheck + 336 tests
+pnpm check            # typecheck + 364 tests（MOSS_SKIP_E2E=1 只跑離線的 338 條）
 pnpm demo             # 終端機直接看面板，不需要任何 host
 pnpm demo injection   # 看被注入指令的那一幕
 pnpm build:all        # 面板、簽名頁、預覽頁、MCP server

@@ -140,12 +140,63 @@ h1 {
   letter-spacing: var(--tight);
 }
 
+/* 這一句是誰講的，要比那句話本身先被讀到，所以它在上面且是 uppercase 標籤 */
+.claim-label {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
 .lead {
   margin: 0 0 20px;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: var(--tight);
   text-wrap: balance;
+}
+
+/* ── 這一頁自己解出來的 calldata ──
+   有 danger 時要比 .lead 更搶眼：.lead 是別人講的，這裡是位元組講的。 */
+
+.decoded {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.decoded[data-danger="true"] {
+  border-color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 8%, var(--surface-2));
+}
+.decoded .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+.decoded ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.decoded li {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.decoded li.danger {
+  color: var(--bad);
+  font-weight: 600;
+}
+.decoded .hint {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-3);
 }
 
 /* ── 指紋：要被人工比對的東西，給它 mono 與字距 ── */
