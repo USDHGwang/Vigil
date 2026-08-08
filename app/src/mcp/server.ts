@@ -75,13 +75,15 @@ function resolveAccount(account: string | undefined, sessionId: string | undefin
  *
  * 從原始碼跑（src/mcp/）和從打包後跑（dist/）的相對位置不同，兩個都試。
  */
-const PANEL_HTML_CANDIDATES = [
-  new URL("../../panel/index.html", import.meta.url),
-  new URL("../panel/index.html", import.meta.url),
-];
-
 function readPanelHtml(): string {
-  for (const candidate of PANEL_HTML_CANDIDATES) {
+  // 候選路徑放函式內：new URL 需要 import.meta.url 當基準，在 Workers
+  // （workerd）的 module 初始化階段 import.meta.url 不是有效 URL，而
+  // Workers 模式根本不會呼叫這裡（panelHtml 由 options 注入）。
+  const candidates = [
+    new URL("../../panel/index.html", import.meta.url),
+    new URL("../panel/index.html", import.meta.url),
+  ];
+  for (const candidate of candidates) {
     try {
       return readFileSync(candidate, "utf-8");
     } catch {
@@ -89,7 +91,7 @@ function readPanelHtml(): string {
     }
   }
   throw new Error(
-    `找不到面板 HTML。跑過 pnpm build:panel 了嗎？找過：${PANEL_HTML_CANDIDATES.map(String).join(", ")}`,
+    `找不到面板 HTML。跑過 pnpm build:panel 了嗎？找過：${candidates.map(String).join(", ")}`,
   );
 }
 
@@ -111,6 +113,10 @@ export interface ServerOptions {
    * server 完全不寫記憶，remember_account 回 supported:false。
    */
   stateless?: boolean;
+  /**
+   * 面板 HTML 內嵌字串（Workers 等無 fs 環境）。不傳時走 readFileSync 候選路徑。
+   */
+  panelHtml?: string;
 }
 
 export function createServer(options: ServerOptions = {}): McpServer {

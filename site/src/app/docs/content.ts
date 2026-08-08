@@ -118,6 +118,11 @@ export const DOCS: Record<"en" | "zh-TW", DocsContent> = {
           title: "Remote, for connectors",
           body: "One process serves /mcp, /sign, and /health. This is what Claude web and ChatGPT connectors need — a public https URL. Note: remote connectors reach your server from Anthropic's/OpenAI's cloud, so it must be publicly reachable; a localhost tunnel works, a private network doesn't.",
         },
+        {
+          name: "Workers",
+          title: "Cloudflare Workers, always-on",
+          body: "The same server core deployed as a Worker (Web Standard transport, panel and signing HTML embedded at build time). One command deploys to a permanent https URL — no tunnel to babysit. See MCP-SETUP.md in the repo for the exact steps.",
+        },
       ],
       signTag: "Signing page",
       sign: {
@@ -214,6 +219,11 @@ export const DOCS: Record<"en" | "zh-TW", DocsContent> = {
           name: "HTTP",
           title: "遠端，給 connector 用",
           body: "一個 process 提供 /mcp、/sign、/health。這是 Claude web 和 ChatGPT connector 需要的——公開 https 網址。注意：remote connector 是從 Anthropic/OpenAI 的雲端連你的 server，必須公開可達；本機隧道可以，內網不行。",
+        },
+        {
+          name: "Workers",
+          title: "Cloudflare Workers，常駐",
+          body: "同一個 server core 部屬成 Worker（Web Standard transport，面板與簽名頁 HTML 建置時內嵌）。一行指令部屬到永久 https 網址——不用顧隧道。詳細步驟見 repo 的 MCP-SETUP.md。",
         },
       ],
       signTag: "簽名頁",

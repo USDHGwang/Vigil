@@ -1,0 +1,13 @@
+# Cloudflare Workers 部屬設定（Vigil MCP server）
+# 部屬：pnpm build:worker && pnpm worker:deploy
+# 本機驗證：pnpm build:worker && pnpm worker:dev（wrangler dev → 8787）
+
+name = "vigil-mcp"
+main = "dist/worker.js"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 環境變數（nodejs_compat 讓 process.env 反映 vars）
+[vars]
+PUBLIC_URL = "https://vigil-mcp.<subdomain>.workers.dev"
+ALLOWED_ORIGINS = "https://claude.ai,https://claude.com,https://chatgpt.com,https://cursor.sh"

@@ -102,6 +102,24 @@ PORT=3000 PUBLIC_URL=https://你的網域 HOST=0.0.0.0 \
 
 > Claude Desktop 的 Connectors 只收 https，本機這條要配隧道或部署才接得上。
 
+### 裝法三：Cloudflare Workers（正式部屬）
+
+同一個 server core，改跑 Web Standard（fetch handler）：MCP SDK 的
+`WebStandardStreamableHTTPServerTransport` 原生支援 Workers。面板與簽名頁
+HTML 在建置時內嵌（Workers 沒有 fs）。
+
+```bash
+pnpm build:worker        # dist/worker.js（esbuild bundle，含內嵌 HTML）
+npx wrangler login       # 首次：瀏覽器 OAuth 授權
+pnpm worker:deploy       # 部屬到 https://vigil-mcp.<你的子域>.workers.dev
+```
+
+`wrangler.toml` 的 `PUBLIC_URL` 要填部屬後的實際網址（面板拿它開簽名頁），
+`ALLOWED_ORIGINS` 用逗號分隔列出允許的瀏覽器來源。
+
+Worker 與 http.ts 行為一致：`POST /mcp`（無狀態）、`GET /sign`（no-store）、
+`GET /health`、Origin 檢查（不在清單直接 403）、無狀態不支援 server 推送（405）。
+
 ---
 
 ## 各 host 的呈現形式
