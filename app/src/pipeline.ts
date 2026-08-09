@@ -6,7 +6,7 @@
  *   registry.parseReceipt()  把 Change 翻成 Receipt（Moss 內部驗覆蓋）
  *   toPanelView()  組成面板要的 EvidencePanelView
  *
- * 比對分兩層（見 product-brief §4）：這裡只做機器能確定性判斷的結構層。
+ * 比對分兩層：這裡只做機器能確定性判斷的結構層。
  * 語意層（使用者說的話 vs 實際效果）由面板並排顯示，交給人。
  */
 
@@ -534,8 +534,8 @@ async function estimateGasWithoutOverrides(
  * 兩條路都估不到手續費時的警告。
  *
  * 不能靜默放行：這個檢查的用途就是攔下「送出去會 revert、手續費白扣」的交易，
- * 估不到手續費等於這個檢查沒做。照設計 brief 的第五種狀態處理——
- * 「我們沒能驗證。不是通過，也不是有危險」，所以擋簽名但把已知的部分講出來。
+ * 估不到手續費等於這個檢查沒做。這是「我們沒能驗證」——既不是通過也不是
+ * 有危險，所以擋下簽名，但把已經知道的部分講出來。
  */
 export function feeUnknownWarning(balance: bigint, value: bigint, locale: Locale = "en"): Warning {
   const mon = (wei: bigint): string => formatAmount(wei.toString(), 18);

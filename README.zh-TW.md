@@ -151,7 +151,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
 | 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、簽名頁只在那個 worker 的 `/sign`、介紹站 [vigilapp.vercel.app](https://vigilapp.vercel.app) | 完成 |
 
-`pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。詳細狀態、決定紀錄、風險維護在內部文件。
+`pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。
 
 ### 自己驗過的（非文件轉述）
 
@@ -185,7 +185,15 @@ Monad Foundation 的 DevRel 工程師，但專案掛在個人帳號下，README 
 
 本專案作者寫的 shMONAD protocol adapter 已開 PR 進 Moss upstream（[#128](https://github.com/nishuzumi/moss/pull/128)）。
 
-我們對 Moss 的曝險分三層，哪一層擋得住哪一層擋不住，分析維護在內部文件。
+我們對 Moss 的依賴分三件事，規則涵蓋的程度不一樣：
+
+| Moss 負責什麼 | 它錯了會怎樣 | 我們看得出來嗎 |
+|---|---|---|
+| 從 capability 組出交易 | 被模擬的是錯的 calldata | 看得出來——面板顯示的是「實際組出來那筆」的效果，而交給錢包簽的就是被模擬的那一筆 |
+| 從 trace 產出原始 changes | 後面全部都錯 | **看不出來。這是整個設計的地板** |
+| adapter 把 changes 讀成 receipt | 寫出來的摘要是錯的 | 部分——結構規則讀的是原始 changes 不是 adapter 的解讀，所以 adapter 錯不會讓一筆多出來的授權變成乾淨面板 |
+
+中間那列是誠實的極限：證據的品質上限就是模擬器的品質，這個專案沒有重新推導它。
 
 ## 文件
 

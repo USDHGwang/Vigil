@@ -212,8 +212,6 @@ at all; the rest simulate against Monad mainnet (no signing, no cost).
 - **The signing page sends the first transaction only.** It says so when a batch has more. The staking demo is a single transaction, so the demo is unaffected.
 - **The wallet leg is verified end to end** on mainnet (2026-08-07): `eth_requestAccounts` through `eth_sendTransaction`, wallet popup to explorer link.
 
-Details, decision log, and risks are tracked in our internal docs (Traditional Chinese).
-
 ### Verified first hand, not quoted from docs
 
 Live against `rpc.monad.xyz`: `debug_traceCall` works, chain ID 143, CORS open to any origin. The trace also confirmed that the shMONAD proxy points at the implementation address hard-coded in the source.
@@ -228,15 +226,23 @@ The source is vendored in [`app/vendor/moss/`](app/vendor/moss/README.md), pinne
 
 The shMONAD protocol adapter in this project was written by the author and is open as a PR against Moss upstream ([#128](https://github.com/nishuzumi/moss/pull/128)).
 
-Our exposure to Moss splits into three layers. Which ones we can catch and which we cannot is analyzed in our internal docs.
+We depend on Moss for three separate things, and the rules cover them unevenly:
+
+| What Moss does | If it is wrong | Would we notice |
+|---|---|---|
+| Builds the transaction from a capability | Wrong calldata gets simulated | Yes — the panel shows the effect of whatever was actually built, and the signed bytes are the simulated bytes |
+| Produces the raw changes from the trace | Everything downstream is wrong | **No.** This is the floor of the whole design |
+| Adapters read those changes into a receipt | The written summary is wrong | Partly — the structural rules read the raw changes, not the adapter's reading, so a wrong adapter cannot turn an unexpected approval into a clean panel |
+
+That middle row is the honest limit: the evidence is only as good as the
+simulator, and this project does not re-derive it.
 
 ## Docs
 
-| File | Contents |
-|---|---|
-| [app/MCP-SETUP.md](app/MCP-SETUP.md) | Setup and wiring |
-
-Most documents are in Traditional Chinese.
+[app/MCP-SETUP.md](app/MCP-SETUP.md) covers installing and wiring the server —
+stdio for a local host, HTTP for a remote connector. It is written in
+Traditional Chinese; the [add page](https://vigilapp.vercel.app/add) has the
+same steps with one-click links for the common hosts.
 
 ## License
 
