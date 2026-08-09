@@ -74,6 +74,13 @@ export default {
       });
     }
 
+    if (url.pathname === "/.well-known/oauth-authorization-server") {
+      // 我們沒有 OAuth（信任靠 origin 白名單，不是帳號制）。RFC 8414 規定
+      // 沒有 discovery 文件就回 404——405 會被部分 client（ChatGPT）當成
+      // 伺服器異常而拒絕連接。
+      return new Response(null, { status: 404, headers: corsHeaders(request) });
+    }
+
     if (url.pathname === "/mcp" && request.method === "POST") {
       // 無狀態模式：每個請求新建 server 與 transport（跟 http.ts 相同）
       const server = createServer({ signPageUrl: SIGN_PAGE_URL, stateless: true, panelHtml });

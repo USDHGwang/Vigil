@@ -112,6 +112,11 @@ describe("路由（stateless 模式的邊界）", () => {
     expect(res.status).toBe(405);
   });
 
+  it("OAuth discovery 回 404（RFC 8414：沒有 discovery 文件；405 會讓 ChatGPT 類 client 拒連）", async () => {
+    const res = await worker.fetch(new Request("https://vigil-mcp.test.workers.dev/.well-known/oauth-authorization-server"));
+    expect(res.status).toBe(404);
+  });
+
   it("DELETE /mcp 回 405", async () => {
     const res = await worker.fetch(new Request("https://vigil-mcp.test.workers.dev/mcp", { method: "DELETE" }));
     expect(res.status).toBe(405);
