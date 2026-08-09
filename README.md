@@ -200,7 +200,7 @@ Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md).
 | MCP server with UI resource: MCP Apps panel (Claude Desktop, claude.ai) + ANSI text for CLI hosts | done |
 | Signing handoff to wallet — fingerprint on both pages, tamper paths tested in a browser, end to end verified on mainnet 2026-08-07 | done |
 | Wallet connect (so the account stops coming from the agent) | not started |
-| Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), signing page at that worker's `/sign` and nowhere else, marketing site on [vigilapp.vercel.app](https://usdhgwang.github.io/Vigil) | done |
+| Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), signing page at that worker's `/sign` and nowhere else, marketing site on [GitHub Pages](https://usdhgwang.github.io/Vigil) | done |
 
 `pnpm check`: **364 tests**. `MOSS_SKIP_E2E=1` runs 338 of them with no network
 at all; the rest simulate against Monad mainnet (no signing, no cost).
