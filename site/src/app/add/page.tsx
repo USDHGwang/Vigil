@@ -129,7 +129,7 @@ cd Vigil/app && pnpm install && pnpm build:all`;
       logo: "openai",
       name: "Codex",
       steps: a.stepsCodex,
-      code: "codex mcp add vigil --command node --args <repo>/app/dist/cli.js",
+      code: "codex mcp add vigil -- node <repo>/app/dist/cli.js",
     },
     {
       glyph: "❖",
