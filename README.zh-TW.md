@@ -164,7 +164,7 @@ Monad 主網支援 EIP-7702：帶 authorization 的交易 gas 比對照組多 25
 ```bash
 cd app
 pnpm install          # 會自動建 vendor 裡的 Moss，不需要外部 checkout
-pnpm check            # typecheck + 368 tests（MOSS_SKIP_E2E=1 只跑離線的 346 條）
+pnpm check            # typecheck + 372 tests（MOSS_SKIP_E2E=1 只跑離線的 346 條）
 pnpm demo             # 終端機直接看面板，不需要任何 host
 pnpm demo injection   # 看被注入指令的那一幕
 pnpm build:all        # 面板、簽名頁、預覽頁、MCP server
