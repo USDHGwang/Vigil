@@ -223,7 +223,7 @@ export const DOCS: Record<"en" | "zh-TW", DocsContent> = {
         {
           name: "Workers",
           title: "Cloudflare Workers，常駐",
-          body: "同一個 server core 部屬成 Worker（Web Standard transport，面板與簽名頁 HTML 建置時內嵌）。一行指令部屬到永久 https 網址——不用顧隧道。詳細步驟見 repo 的 MCP-SETUP.md。",
+          body: "同一個 server core 部署成 Worker（Web Standard transport，面板與簽名頁 HTML 建置時內嵌）。一行指令部署到永久 https 網址——不用顧隧道。詳細步驟見 repo 的 MCP-SETUP.md。",
         },
       ],
       signTag: "簽名頁",

@@ -1,172 +1,204 @@
-# Vigil MCP — 安裝與接線
+# Vigil MCP — install and wiring
 
-Vigil 是透過 [MCP](https://modelcontextprotocol.io/) 提供的簽名前交易證據面板。agent 準備好一筆 Monad 交易後，Vigil 對主網跑模擬，把實際會發生什麼渲染在對話裡。
+**English** | [简体中文](MCP-SETUP.zh-CN.md) | [繁體中文](MCP-SETUP.zh-TW.md)
 
-支援兩種傳輸：**stdio**（本機，最快）與 **HTTP**（部署後給 remote connector 用）。
+Vigil is a pre-sign evidence panel delivered over [MCP](https://modelcontextprotocol.io/).
+Once an agent has prepared a Monad transaction, Vigil simulates it against
+mainnet and renders what will actually happen inside the conversation.
+
+Three ways to run it: **stdio** (local, quickest), **HTTP** (for a remote
+connector), and **Cloudflare Workers** (what the hosted instance runs on).
 
 ---
 
-## 裝法一：stdio（本機，最快）
+## Option 1: stdio (local, quickest)
 
 ```bash
 cd <repo>/app
-pnpm install        # 自動建 vendor 裡的 Moss，不需要外部 checkout
-pnpm build:all      # 建面板、簽名頁、MCP server
+pnpm install        # also builds the vendored Moss, no external checkout needed
+pnpm build:all      # panel, signing page, MCP server
 ```
 
-設定檔在 `%APPDATA%\Claude\claude_desktop_config.json`（macOS 是
-`~/Library/Application Support/Claude/`），跟 `preferences` 同一層加一個 key，
-**保留原本的內容**：
+The config file is at `%APPDATA%\Claude\claude_desktop_config.json` (on macOS,
+`~/Library/Application Support/Claude/`). Add one key next to `preferences` and
+**keep whatever is already in the file**:
 
 ```json
 "mcpServers": {
   "vigil": {
     "command": "node",
-    "args": ["<你的絕對路徑>/app/dist/cli.js"]
+    "args": ["<your absolute path>/app/dist/cli.js"]
   }
 }
 ```
 
-存檔後**完全結束 Claude Desktop 再重開**（關視窗不夠）。
+Save, then **quit Claude Desktop completely and reopen it**. Closing the window
+is not enough.
 
-> 為什麼用 `node` 加絕對路徑：pnpm 會把訊息寫到 stdout，混進 JSON-RPC 會壞掉協定；
-> 打包後的 `dist/cli.js` 從任意目錄啟動都通。
+> Why `node` with an absolute path: pnpm writes messages to stdout, and anything
+> mixed into stdout breaks the JSON-RPC stream. The bundled `dist/cli.js` starts
+> from any working directory.
 
-啟動時 stderr 會印簽名頁的位置：
+On startup the signing page location is printed to stderr:
 
 ```
-Vigil 簽名頁：http://127.0.0.1:52835/sign
+Vigil sign page: http://127.0.0.1:52835/sign
 ```
 
-port 每次不同（臨時 port，不跟既有服務搶）。要固定就設 `SIGN_PORT`。
+The port differs every run (an ephemeral port, so it will not collide with
+something you already have). Set `SIGN_PORT` to pin it.
 
-### 簽名頁託管在外面（`SIGN_PAGE_URL`）
+### Hosting the signing page elsewhere (`SIGN_PAGE_URL`)
 
 ```json
 "mcpServers": {
   "vigil": {
     "command": "node",
-    "args": ["<你的絕對路徑>/app/dist/cli.js"],
-    "env": { "SIGN_PAGE_URL": "https://你的網域/sign/" }
+    "args": ["<your absolute path>/app/dist/cli.js"],
+    "env": { "SIGN_PAGE_URL": "https://your-domain/sign/" }
   }
 }
 ```
 
-設了就不起本機 server，面板直接指過去。
+With this set, no local server starts and the panel points straight at that URL.
 
-**為什麼需要**：本機模式的簽名頁是 `http://127.0.0.1:<浮動 port>`，而 MCP host
-對面板能開哪些網址有政策——localhost 加浮動 port 是最容易被擋的形狀。指到固定的
-https 網址通常就不再被擋。
+**Why you would want it:** in local mode the signing page is
+`http://127.0.0.1:<floating port>`, and MCP hosts have policies about which URLs
+a panel may open. Localhost plus a floating port is the shape most likely to be
+blocked. A fixed https URL usually is not.
 
-簽名頁是完全自包含的靜態 HTML：交易資料放在網址的 `#` 後面，fragment 不會進
-HTTP 請求，所以**交易內容不會送到託管這一頁的伺服器上**，不需要後端。
+The signing page is fully self-contained static HTML. The transaction rides in
+the URL fragment, and browsers do not put the fragment in the HTTP request, so
+**the transaction never reaches the server hosting that page**. It needs no
+backend.
 
-技術上它可以放在任何靜態託管，但**建議只放一個地方**，官方那份就在 worker 的
-`/sign`。理由不是安全模型會變，是那一頁「只讀網址」的性質讓任何人都做得出一個
-指向它的連結——所以它必須自己解 calldata、不掛「主網模擬」徽章、解出授權時不
-自動叫錢包（見 `src/sign/calldata.ts`）。每多一份託管就多一個要維持這些性質的
-地方，而各份的更新路徑不一樣：worker 是 build 時內嵌，靜態託管是複製檔案。
-2026-08-09 就漂過一次，兩邊版本不同了幾個小時都沒有人發現。
-
----
-
-## 裝法二：HTTP（部署用）
-
-```bash
-pnpm mcp:http                                   # http://127.0.0.1:8848
-PORT=3000 PUBLIC_URL=https://你的網域 HOST=0.0.0.0 \
-  ALLOWED_ORIGINS=https://你的網域 pnpm mcp:http   # 部署時
-```
-
-同一個 process 提供三件事：
-
-| 路徑 | 用途 |
-|---|---|
-| `POST /mcp` | MCP 端點，無狀態模式 |
-| `GET /sign` | 簽名頁 |
-| `GET /health` | 健康檢查，回報簽名頁位置 |
-
-**`PUBLIC_URL` 要填使用者的瀏覽器連得到的位置**，不是這個 process 自己看到的。
-容器裡這兩者常常不一樣，填錯的話面板會叫瀏覽器去開一個連不到的網址。
-
-### 綁定與來源
-
-**預設只綁 `127.0.0.1`。** 要對外開才設 `HOST=0.0.0.0`。
-
-**Origin 驗證。** 只放行：
-
-| Origin | 結果 |
-|---|---|
-| 沒帶（Claude Desktop 這類原生程式、curl） | 放行。瀏覽器發跨來源請求一定會帶，所以這不是瀏覽器攻擊面 |
-| `https://claude.ai` 與其子網域 | 放行 |
-| `http://localhost:<PORT>`、`http://127.0.0.1:<PORT>` | 放行 |
-| 其他 | 403 `Origin not allowed.` |
-
-`ALLOWED_ORIGINS` 用逗號分隔可以覆寫整份清單。**明確設了就只認清單**，
-`claude.ai` 的萬用規則不再套用——部署時記得把 `https://claude.ai` 一起列進去。
-
-> Claude Desktop 的 Connectors 只收 https，本機這條要配隧道或部署才接得上。
-
-### 裝法三：Cloudflare Workers（正式部屬）
-
-同一個 server core，改跑 Web Standard（fetch handler）：MCP SDK 的
-`WebStandardStreamableHTTPServerTransport` 原生支援 Workers。面板與簽名頁
-HTML 在建置時內嵌（Workers 沒有 fs）。
-
-```bash
-pnpm build:worker        # dist/worker.js（esbuild bundle，含內嵌 HTML）
-npx wrangler login       # 首次：瀏覽器 OAuth 授權
-pnpm worker:deploy       # 部屬到 https://vigil-mcp.<你的子域>.workers.dev
-```
-
-`wrangler.toml` 的 `PUBLIC_URL` 要填部屬後的實際網址（面板拿它開簽名頁），
-`ALLOWED_ORIGINS` 用逗號分隔列出允許的瀏覽器來源。
-
-Worker 與 http.ts 行為一致：`POST /mcp`（無狀態）、`GET /sign`（no-store）、
-`GET /health`、Origin 檢查（不在清單直接 403）、無狀態不支援 server 推送（405）。
+Technically it can go on any static host, but **put it in exactly one place**.
+The official copy is the worker's `/sign`. The reason is not that the trust
+model changes; it is that a page which reads only its URL can be linked to by
+anyone, so it has to decode the calldata itself, carry no "mainnet simulation"
+badge, and refuse to auto-open the wallet on an approval (see
+`src/sign/calldata.ts`). Every extra copy is another place those properties have
+to hold, and the copies update by different routes: the worker embeds the HTML
+at build time, a static host copies the file. On 2026-08-09 they drifted, and
+the two were on different versions for hours before anyone noticed.
 
 ---
 
-## 各 host 的呈現形式
+## Option 2: HTTP (for deployment)
 
-Vigil 用 MCP Apps extension（`io.modelcontextprotocol/ui`）渲染 HTML 面板；不支援的 host
-自動降級成文字面板（ANSI 上色可用 `VIGIL_COLOR=1` 開啟）。支援與否由 host 在握手時
-自己宣告（`extensions` 欄位），不是 Vigil 猜的。
+```bash
+pnpm mcp:http                                     # http://127.0.0.1:8848
+PORT=3000 PUBLIC_URL=https://your-domain HOST=0.0.0.0 \
+  ALLOWED_ORIGINS=https://your-domain pnpm mcp:http   # deployed
+```
 
-| Host | 呈現 | 安裝方式 |
+One process serves three things:
+
+| Path | Purpose |
+|---|---|
+| `POST /mcp` | MCP endpoint, stateless mode |
+| `GET /sign` | Signing page |
+| `GET /health` | Health check, reports the signing page location |
+
+**`PUBLIC_URL` must be the address the user's browser can reach**, not the one
+this process sees for itself. Inside a container those are often different, and
+getting it wrong means the panel tells the browser to open a URL that does not
+resolve.
+
+### Binding and origins
+
+**Binds `127.0.0.1` only by default.** Set `HOST=0.0.0.0` to expose it.
+
+**Origin checking.** What gets through:
+
+| Origin | Result |
+|---|---|
+| Absent (native apps like Claude Desktop, curl) | Allowed. A browser always sends one on a cross-origin request, so this is not a browser attack surface |
+| `https://claude.ai` and its subdomains | Allowed |
+| `http://localhost:<PORT>`, `http://127.0.0.1:<PORT>` | Allowed |
+| Anything else | 403 `Origin not allowed.` |
+
+`ALLOWED_ORIGINS` takes a comma-separated list and replaces the whole set.
+**Set it and only the list applies** — the `claude.ai` wildcard rule stops
+applying, so remember to include `https://claude.ai` yourself when deploying.
+
+> Claude Desktop's Connectors only accept https, so this one needs a tunnel or a
+> real deployment before it will connect.
+
+## Option 3: Cloudflare Workers (the hosted deployment)
+
+Same server core on a Web Standard fetch handler: the MCP SDK's
+`WebStandardStreamableHTTPServerTransport` supports Workers natively. The panel
+and signing page HTML are embedded at build time, since Workers has no fs.
+
+```bash
+pnpm build:worker        # dist/worker.js (esbuild bundle with the HTML inlined)
+npx wrangler login       # first time: browser OAuth
+pnpm worker:deploy       # deploys to https://vigil-mcp.<your subdomain>.workers.dev
+```
+
+`PUBLIC_URL` in `wrangler.toml` has to be the real post-deploy address, since
+the panel uses it to open the signing page. `ALLOWED_ORIGINS` is the
+comma-separated list of browser origins to allow.
+
+The worker behaves the same as the express version: `POST /mcp` (stateless),
+`GET /sign` (no-store), `GET /health`, origin checking (403 when not listed),
+and 405 for anything that would need server-initiated messages.
+
+**`pnpm worker:deploy` alone is not enough after changing the panel or signing
+page** — they are inlined at build time, so run `pnpm build:worker` first or you
+will redeploy the old HTML.
+
+---
+
+## What each host shows
+
+Vigil renders the HTML panel through the MCP Apps extension
+(`io.modelcontextprotocol/ui`). Hosts that do not support it fall back to a text
+panel automatically (`VIGIL_COLOR=1` turns on ANSI colour). Support is whatever
+the host declares in its `extensions` field during the handshake, not something
+Vigil guesses.
+
+| Host | Shows | How to install |
 |---|---|---|
-| Claude 網頁版（Connectors） | **HTML 面板** | remote URL（`https://<endpoint>/mcp`） |
-| Claude Desktop | **HTML 面板** | stdio config（裝法一） |
-| ChatGPT | **HTML 面板** | remote URL |
-| Cursor 2.6+ | **HTML 面板** | mcpServers JSON |
-| VS Code Copilot / Goose / Postman / MCPJam / M365 Copilot / Archestra / PostHog Code | **HTML 面板** | 各自格式 |
-| Claude Code | 文字面板 | `claude mcp add` |
-| Codex | 文字面板 | `codex mcp add vigil --command node --args …` |
-| Hermes Agent | 文字面板 | config.yaml `mcp_servers` |
-| OpenCode | 文字面板 | opencode.json `type: "local"` + `command` 陣列 |
+| Claude web (Connectors) | **HTML panel** | Remote URL (`https://<endpoint>/mcp`) |
+| Claude Desktop | **HTML panel** | stdio config (option 1) |
+| ChatGPT | **HTML panel** | Remote URL |
+| Cursor 2.6+ | **HTML panel** | mcpServers JSON |
+| VS Code Copilot / Goose / Postman / MCPJam / M365 Copilot / Archestra / PostHog Code | **HTML panel** | Their own formats |
+| Claude Code | Text panel | `claude mcp add` |
+| Codex | Text panel | `codex mcp add vigil --command node --args …` |
+| Hermes Agent | Text panel | config.yaml `mcp_servers` |
+| OpenCode | Text panel | opencode.json `type: "local"` plus a `command` array |
 
-官方 matrix（社群維護）：<https://modelcontextprotocol.io/extensions/client-matrix>
-
----
-
-## 為什麼簽名要另開一頁
-
-MCP App 的面板跑在 sandbox iframe 裡，**碰不到 `window.ethereum`**——那是規格定的
-隔離，不是實作缺漏。所以簽名一定要在一個不在 sandbox 裡的頁面完成。
-
-那一頁必須從 **http(s)** 提供，不能是 `file://`——MetaMask 預設不注入 `file://`
-頁面。這就是為什麼要起一個小 server 而不是直接開檔案。
+Community-maintained matrix:
+<https://modelcontextprotocol.io/extensions/client-matrix>
 
 ---
 
-## 試一下
+## Why signing opens a separate page
 
-在對話裡說：
+The MCP App panel runs in a sandboxed iframe and **cannot reach
+`window.ethereum`**. That isolation is in the spec, not a gap in the
+implementation, so signing has to happen on a page outside the sandbox.
 
-> 用 vigil 幫我看一下，我要質押 0.25 MON
+That page has to be served over **http(s)**, not `file://`. MetaMask does not
+inject into `file://` pages by default. That is why there is a small server
+rather than a file opened directly.
 
-它會呼叫 `preview_transaction`，對 Monad 主網跑真實模擬，面板渲染在對話裡。
+---
 
-**預設的模擬帳戶主網上只有 0.001 MON**，付不起任何一筆交易，所以會顯示「餘額不夠、
-不能簽」。那是真話不是壞掉——Vigil 拿真實餘額對，不吃模擬時蓋上去的餘額。
-要看通過的樣子，在請求裡帶自己的地址。
+## Try it
+
+Say this in the conversation:
+
+> use vigil to check this for me, I want to stake 0.25 MON
+
+It calls `preview_transaction`, runs a real simulation against Monad mainnet,
+and renders the panel in the conversation.
+
+**The default simulation account holds 0.001 MON on mainnet.** It cannot pay for
+any transaction, so you will see "not enough balance, cannot sign". That is
+correct, not broken: Vigil checks the real balance and ignores the one the
+simulator writes over it. To see the passing case, include your own address in
+the request.

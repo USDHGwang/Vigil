@@ -189,7 +189,7 @@ pnpm build:all        # panel, signing page, preview page, MCP server
 
 **The default simulation account holds 0.001 MON on mainnet.** It cannot pay for any transaction, so the staking case shows "not enough balance, cannot sign". That is correct, not broken. We check the real balance and ignore the number the simulator writes over it. To see the passing case: `DEMO_ACCOUNT=0x… pnpm demo`.
 
-Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md) (Traditional Chinese).
+Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md).
 
 ## Status
 
@@ -239,10 +239,13 @@ simulator, and this project does not re-derive it.
 
 ## Docs
 
-[app/MCP-SETUP.md](app/MCP-SETUP.md) covers installing and wiring the server —
-stdio for a local host, HTTP for a remote connector. It is written in
-Traditional Chinese; the [add page](https://vigilapp.vercel.app/add) has the
-same steps with one-click links for the common hosts.
+[app/MCP-SETUP.md](app/MCP-SETUP.md) covers installing and wiring the server:
+stdio for a local host, HTTP for a remote connector, Cloudflare Workers for the
+hosted instance. Also in [简体中文](app/MCP-SETUP.zh-CN.md) and
+[繁體中文](app/MCP-SETUP.zh-TW.md) — the same three languages the panel speaks.
+
+The [add page](https://vigilapp.vercel.app/add) has the same steps with
+one-click links for the hosts that support them.
 
 ## License
 

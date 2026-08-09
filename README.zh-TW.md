@@ -7,7 +7,7 @@
 
 [English](README.md) | **繁體中文**
 
-[**安裝**](app/MCP-SETUP.md) · [**線上站**](https://vigilapp.vercel.app)
+[**安裝**](app/MCP-SETUP.zh-TW.md) · [**線上站**](https://vigilapp.vercel.app)
 
 > 拉丁文 *vigil*：守夜人。看見、回報，不替你決定。
 
@@ -172,7 +172,7 @@ pnpm build:all        # 面板、簽名頁、預覽頁、MCP server
 
 **預設模擬帳戶主網上只有 0.001 MON**，付不起任何一筆交易，所以質押情境會顯示「餘額不夠、不能簽」。**那是真話不是壞掉**——我們會拿真實餘額對，不吃模擬時被蓋上去的數字。要看通過的樣子：`DEMO_ACCOUNT=0x… pnpm demo`。
 
-接進 Claude Desktop 的步驟見 [app/MCP-SETUP.md](app/MCP-SETUP.md)。
+接進 Claude Desktop 的步驟見 [app/MCP-SETUP.zh-TW.md](app/MCP-SETUP.zh-TW.md)。
 
 ## 底層
 
@@ -199,7 +199,7 @@ Monad Foundation 的 DevRel 工程師，但專案掛在個人帳號下，README 
 
 | 檔案 | 內容 |
 |---|---|
-| [app/MCP-SETUP.md](app/MCP-SETUP.md) | 安裝與接線 |
+| [app/MCP-SETUP.zh-TW.md](app/MCP-SETUP.zh-TW.md) | 安裝與接線（也有 [English](app/MCP-SETUP.md)、[简体中文](app/MCP-SETUP.zh-CN.md)） |
 
 ## 授權
 
