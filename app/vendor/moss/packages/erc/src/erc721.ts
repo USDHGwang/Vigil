@@ -2,6 +2,7 @@ import {
   type ActionCtx,
   Address,
   type AddressValue,
+  BooleanFlag,
   Capability,
   type Change,
   createHandle,
@@ -33,12 +34,36 @@ const balanceParams = {
   owner: { type: Address, description: "Address whose collection balance is read." },
 } satisfies ParamsSpec;
 
+const approvalParams = {
+  collection: { type: Address, description: "Collection to manage operator approval for." },
+  operator: { type: Address, description: "Address authorized to manage the caller's tokens." },
+  approved: {
+    type: BooleanFlag,
+    description:
+      "true to grant the operator approval over the caller's tokens, false to revoke it.",
+  },
+} satisfies ParamsSpec;
+
+const approvalCheckParams = {
+  collection: { type: Address, description: "Collection whose approval is checked." },
+  owner: { type: Address, description: "Address that may have granted approval." },
+  operator: { type: Address, description: "Operator whose approval is checked." },
+} satisfies ParamsSpec;
+
 export type ERC721TransferOutcome = {
   operation: "transfer";
   collection: AddressValue;
   from: AddressValue;
   to: AddressValue;
   tokenId: string;
+};
+
+export type ERC721ApprovalOutcome = {
+  operation: "approvalForAll";
+  collection: AddressValue;
+  account: AddressValue;
+  operator: AddressValue;
+  approved: boolean;
 };
 
 @Protocol({
@@ -86,6 +111,72 @@ export class ERC721 {
       params.owner,
     ]);
     return { ...params, balance: balance.toString() };
+  }
+
+  @Capability<ERC721, typeof approvalParams>({
+    intent: "Set or revoke an ERC-721 operator approval",
+    verb: "approve",
+    params: approvalParams,
+    receipt: "approvalReceipt",
+    risk: ["approval"],
+    tags: ["approval"],
+  })
+  async approve(params: InferParams<typeof approvalParams>, ctx: ActionCtx) {
+    return [
+      this.#handle(params.collection, ctx.account).setApprovalForAll([
+        params.operator,
+        params.approved,
+      ]),
+    ];
+  }
+
+  @Query({
+    intent: "Check whether an operator is approved for an ERC-721 collection",
+    params: approvalCheckParams,
+  })
+  async isApprovedForAll(params: InferParams<typeof approvalCheckParams>, ctx: ActionCtx) {
+    const approved = await this.#handle(params.collection, ctx.account).read.isApprovedForAll([
+      params.owner,
+      params.operator,
+    ]);
+    return { ...params, approved };
+  }
+
+  @Receipt()
+  approvalReceipt(changes: readonly Change[]): MossReceipt<ERC721ApprovalOutcome> {
+    if (changes.length !== 1 || changes[0]?.kind !== "event") {
+      throw new Error("ERC721 approval Receipt requires exactly one ApprovalForAll event");
+    }
+    const change = changes[0];
+    let decoded: ReturnType<typeof decodeEventLog<typeof ierc721Abi>>;
+    try {
+      decoded = decodeEventLog({
+        abi: ierc721Abi,
+        topics: change.topics as [Hex, ...Hex[]],
+        data: change.data,
+        strict: true,
+      });
+    } catch {
+      throw new Error(`Unexpected Change: ${change.address} emitted an unsupported ERC-721 event`);
+    }
+    if (decoded.eventName !== "ApprovalForAll") {
+      throw new Error(`Unexpected Change: expected ERC721 ApprovalForAll, received ${decoded.eventName}`);
+    }
+    const outcome: ERC721ApprovalOutcome = {
+      operation: "approvalForAll",
+      collection: change.address,
+      // ERC-721 的事件欄位名是 owner（ERC-1155 才是 account）——欄位不互通
+      account: decoded.args.owner,
+      operator: decoded.args.operator,
+      approved: decoded.args.approved,
+    };
+    const text = `ERC721 ApprovalForAll: ${outcome.collection} grants ${outcome.operator} ${outcome.approved ? "unlimited" : "no"} authority over ${outcome.account}'s tokens`;
+    return {
+      kind: "receipt",
+      outcome,
+      text,
+      changes: [{ kind: "change", change, data: outcome, text }],
+    };
   }
 
   @Receipt()

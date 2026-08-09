@@ -218,7 +218,7 @@ const en: Dict = {
   tool_vigil_cmd_remember: "remember your wallet address (this conversation) → remember_account",
   tool_vigil_cmd_recent: "look up what this conversation has previewed → recent_previews",
   tool_vigil_first_use:
-    "First time: tell the agent your wallet address (it calls vigil-remember), then say what you want to do (e.g. “stake 0.25 MON into shMON”). The agent will discover → prepare → vigil-preview the evidence, and you sign in your wallet after you confirm.",
+    "First time: tell the agent your wallet address, then say what you want to do (e.g. “stake 0.25 MON into shMON”). The agent will discover → prepare → vigil-preview the evidence, and you sign in your wallet after you confirm.",
   tool_vigil_no_memo:
     "You don't need to remember any commands — just say what you want, and the agent handles the tools.",
   raw_changes_short: "{n} unparsed changes",
@@ -403,7 +403,7 @@ const zhCN: Dict = {
   tool_vigil_cmd_remember: "记住你的钱包地址（这个对话）→ remember_account",
   tool_vigil_cmd_recent: "回查这个对话预览过什么 → recent_previews",
   tool_vigil_first_use:
-    "第一次使用：告诉 agent 你的钱包地址（agent 会调用 vigil-remember），然后说你想做什么（例如「帮我质押 0.25 MON 成 shMONAD」），agent 会 discover → 准备交易 → vigil-preview 给你看证据，你确认后在钱包里签名。",
+    "第一次使用：告诉 agent 你的钱包地址，然后说你想做什么（例如「帮我质押 0.25 MON 成 shMONAD」），agent 会 discover → 准备交易 → vigil-preview 给你看证据，你确认后在钱包里签名。",
   tool_vigil_no_memo: "你不需要记任何指令——直接说你想做什么，agent 会用这些工具完成。",
   raw_changes_short: "{n} 笔未解读的变动",
   err_query_no_tx: "{protocol}.{method} 是 Query 不是 Capability，没有交易可以模拟",
@@ -587,7 +587,7 @@ const zhTW: Dict = {
   tool_vigil_cmd_remember: "記住你的錢包地址（這個對話）→ remember_account",
   tool_vigil_cmd_recent: "回查這個對話預覽過什麼 → recent_previews",
   tool_vigil_first_use:
-    "第一次使用：告訴 agent 你的錢包地址（agent 會呼叫 vigil-remember），然後說你想做什麼（例如「幫我質押 0.25 MON 成 shMONAD」），agent 會 discover → 準備交易 → vigil-preview 給你看證據，你確認後在錢包裡簽名。",
+    "第一次使用：告訴 agent 你的錢包地址，然後說你想做什麼（例如「幫我質押 0.25 MON 成 shMONAD」），agent 會 discover → 準備交易 → vigil-preview 給你看證據，你確認後在錢包裡簽名。",
   tool_vigil_no_memo: "你不需要記任何指令——直接說你想做什麼，agent 會用這些工具完成。",
   raw_changes_short: "{n} 筆未解讀的變動",
   err_query_no_tx: "{protocol}.{method} 是 Query 不是 Capability，沒有交易可以模擬",

@@ -333,6 +333,20 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     expect(balanceOf).toBeUndefined();
   });
 
+  it("discover 列出 erc721 的 setApprovalForAll（NFT 清空的主要 vector，跟 erc1155 對稱）", { timeout: 180_000 }, async () => {
+    const result = await client.callTool({ name: "discover", arguments: {} });
+    const { operations } = result.structuredContent as {
+      operations: { protocol: string; method: string; intent: string; params: Record<string, unknown> }[];
+    };
+    const approve721 = operations.find((o) => o.protocol === "erc721" && o.method === "approve");
+    expect(approve721).toBeDefined();
+    expect(Object.keys(approve721?.params ?? {})).toEqual(
+      expect.arrayContaining(["collection", "operator", "approved"]),
+    );
+    const approve1155 = operations.find((o) => o.protocol === "erc1155" && o.method === "approve");
+    expect(approve1155).toBeDefined();
+  });
+
   it("discover 不宣告 UI resource（資料工具，渲染器沒有 view 可畫）", async () => {
     // 修過一次：discover 帶 _meta.ui.resourceUri 時，host 會嘗試用面板
     // 渲染它的結果，但 discover 回的是操作清單不是 EvidencePanelView，
