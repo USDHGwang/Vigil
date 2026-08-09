@@ -7,7 +7,7 @@
 
 **English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
 
-[**Setup**](app/MCP-SETUP.md) · [**Live site**](https://usdhgwang.github.io/Vigil)
+[**Setup**](app/MCP-SETUP.md) · [**Live site**](https://vigil-mcp.vercel.app)
 
 > Latin *vigil*: a watchman. Sees, reports, does not decide for you.
 
@@ -200,7 +200,7 @@ Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md).
 | MCP server with UI resource: MCP Apps panel (Claude Desktop, claude.ai) + ANSI text for CLI hosts | done |
 | Signing handoff to wallet — fingerprint on both pages, tamper paths tested in a browser, end to end verified on mainnet 2026-08-07 | done |
 | Wallet connect (so the account stops coming from the agent) | not started |
-| Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), signing page at that worker's `/sign` and nowhere else, marketing site on [GitHub Pages](https://usdhgwang.github.io/Vigil) | done |
+| Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), signing page at that worker's `/sign` and nowhere else, marketing site on [GitHub Pages](https://vigil-mcp.vercel.app) | done |
 
 `pnpm check`: **364 tests**. `MOSS_SKIP_E2E=1` runs 338 of them with no network
 at all; the rest simulate against Monad mainnet (no signing, no cost).
@@ -244,7 +244,7 @@ stdio for a local host, HTTP for a remote connector, Cloudflare Workers for the
 hosted instance. Also in [简体中文](app/MCP-SETUP.zh-CN.md) and
 [繁體中文](app/MCP-SETUP.zh-TW.md) — the same three languages the panel speaks.
 
-The [add page](https://usdhgwang.github.io/Vigil/add) has the same steps with
+The [add page](https://vigil-mcp.vercel.app/add) has the same steps with
 one-click links for the hosts that support them.
 
 ## License

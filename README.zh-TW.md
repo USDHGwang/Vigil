@@ -7,7 +7,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文**
 
-[**安裝**](app/MCP-SETUP.zh-TW.md) · [**線上站**](https://usdhgwang.github.io/Vigil)
+[**安裝**](app/MCP-SETUP.zh-TW.md) · [**線上站**](https://vigil-mcp.vercel.app)
 
 > 拉丁文 *vigil*：守夜人。看見、回報，不替你決定。
 
@@ -149,7 +149,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是靜
 | MCP server + UI resource：MCP Apps 面板（Claude Desktop、claude.ai）+ CLI host 的 ANSI 文字 | 完成 |
 | 簽名交回錢包——兩頁同一串指紋、篡改路徑瀏覽器實測、2026-08-07 主網端到端實送 | 完成 |
 | 錢包連接（讓 account 不再由 agent 提供） | 未開始 |
-| 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、簽名頁只在那個 worker 的 `/sign`、介紹站 [GitHub Pages](https://usdhgwang.github.io/Vigil) | 完成 |
+| 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、簽名頁只在那個 worker 的 `/sign`、介紹站 [GitHub Pages](https://vigil-mcp.vercel.app) | 完成 |
 
 `pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 條完全不連外，其餘對 Monad 主網跑模擬（不簽名、不花錢）。
 
