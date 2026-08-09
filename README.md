@@ -181,7 +181,7 @@ that, and neither is a bug we plan to fix in this shape:
 ```bash
 cd app
 pnpm install          # builds the vendored Moss, no external checkout needed
-pnpm check            # typecheck + 368 tests (MOSS_SKIP_E2E=1 for the offline 346)
+pnpm check            # typecheck + 372 tests (MOSS_SKIP_E2E=1 for the offline 346)
 pnpm demo             # the panel in your terminal, no host required
 pnpm demo injection   # the injected-instruction case
 pnpm build:all        # panel, signing page, preview page, MCP server
