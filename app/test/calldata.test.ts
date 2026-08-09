@@ -136,3 +136,53 @@ describe("正常路徑不被誤傷", () => {
     expect(canAutoStart(stake, false)).toBe(false);
   });
 });
+
+/**
+ * ERC-4626 金庫。shMONAD 的質押走 `deposit(uint256,address)`（0x6e553f65），
+ * 也就是 demo 主線那一筆。2026-08-09 線上實測：簽名頁對它顯示「解不出來」，
+ * 行為正確但那是整個 demo 最後一步，讀起來像工具讀不懂自己的交易。
+ *
+ * 這幾個是 notice 不是 danger：資產進出的是使用者自己的部位，沒有把控制權
+ * 交給第三方——所以自動觸發錢包照樣成立，正常質押的兩步流程不變。
+ */
+describe("ERC-4626 金庫（demo 主線的 selector）", () => {
+  const vaultAbi = parseAbi([
+    "function deposit(uint256 assets, address receiver)",
+    "function mint(uint256 shares, address receiver)",
+    "function withdraw(uint256 assets, address receiver, address owner)",
+    "function redeem(uint256 shares, address receiver, address owner)",
+  ]);
+  const vcall = (functionName: string, args: readonly unknown[]): string =>
+    encodeFunctionData({ abi: vaultAbi, functionName, args } as never);
+
+  it("deposit 解得出來，而且是 notice 不是 danger", () => {
+    const f = inspectCalldata(vcall("deposit", [250000000000000000n, VICTIM]), TOKEN);
+    expect(f).toHaveLength(1);
+    expect(f[0]?.key).toBe("sign_risk_deposit");
+    expect(f[0]?.severity).toBe("notice");
+    expect(String(f[0]?.vars.who).toLowerCase()).toContain("0x08299d");
+  });
+
+  it("withdraw / redeem 帶出 owner 與 receiver", () => {
+    const w = inspectCalldata(vcall("withdraw", [1n, ATTACKER, VICTIM]), TOKEN);
+    expect(w[0]?.key).toBe("sign_risk_withdraw");
+    expect(String(w[0]?.vars.who).toLowerCase()).toContain("0x9f2ca7");
+    expect(String(w[0]?.vars.owner).toLowerCase()).toContain("0x08299d");
+    expect(inspectCalldata(vcall("redeem", [1n, VICTIM, VICTIM]), TOKEN)[0]?.key).toBe("sign_risk_redeem");
+    expect(inspectCalldata(vcall("mint", [1n, VICTIM]), TOKEN)[0]?.key).toBe("sign_risk_mint");
+  });
+
+  it("金庫操作不擋自動觸發（正常質押維持兩步）", () => {
+    expect(hasDanger(inspectCalldata(vcall("deposit", [1n, VICTIM]), TOKEN))).toBe(false);
+  });
+
+  it("線上那筆真實質押 calldata 現在解得出來", () => {
+    // 2026-08-09 從部署中的 worker 抓下來的原始 calldata
+    const real =
+      "0x6e553f650000000000000000000000000000000000000000000000000003782dace9d90000" +
+      "00000000000000000000000008299d244c21bee544808c911fd3dea59051ecc0";
+    const f = inspectCalldata(real, "0x1b68626dca36c7fe922fd2d55e4f631d962de19c");
+    expect(f).toHaveLength(1);
+    expect(f[0]?.key).toBe("sign_risk_deposit");
+  });
+});

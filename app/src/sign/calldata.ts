@@ -38,6 +38,14 @@ const ABI = parseAbi([
   // 但它一樣是把餘額交出去，而且 findApprovals 那條事件路徑完全看不到它。
   "function approve(address token, address spender, uint160 amount, uint48 expiration)",
   "function transferFrom(address from, address to, uint256 amount)",
+  // ERC-4626 金庫。shMONAD 的質押/贖回走這一組，是這個產品的主線操作——
+  // 認不得它的話，最常見的那一筆在簽名頁上會顯示「解不出來」。
+  // 這些不是 danger：資產進出的是使用者自己的部位，沒有把控制權交給第三方。
+  // 但 receiver / owner 要顯示出來，那是「錢最後去哪」。
+  "function deposit(uint256 assets, address receiver)",
+  "function mint(uint256 shares, address receiver)",
+  "function withdraw(uint256 assets, address receiver, address owner)",
+  "function redeem(uint256 shares, address receiver, address owner)",
 ]);
 
 /** selector 用簽章現算，不手抄 hex。抄錯的話這一整層會靜默失效。 */
@@ -50,6 +58,10 @@ const SELECTORS = {
   ),
   permit2Approve: toFunctionSelector("approve(address,address,uint160,uint48)"),
   transferFrom: toFunctionSelector("transferFrom(address,address,uint256)"),
+  deposit: toFunctionSelector("deposit(uint256,address)"),
+  mint4626: toFunctionSelector("mint(uint256,address)"),
+  withdraw: toFunctionSelector("withdraw(uint256,address,address)"),
+  redeem: toFunctionSelector("redeem(uint256,address,address)"),
 } as const;
 
 function short(address: string): string {
@@ -135,6 +147,35 @@ export function inspectCalldata(data: string, to: string): CalldataFinding[] {
             severity: "notice",
             key: "sign_risk_transfer_from",
             vars: { from: short(from), to: short(recipient), token, amount: amount.toString() },
+          },
+        ];
+      }
+      case SELECTORS.deposit:
+      case SELECTORS.mint4626: {
+        const { args } = decodeFunctionData({ abi: ABI, data: data as `0x${string}` });
+        const [amount, receiver] = args as unknown as [bigint, string];
+        return [
+          {
+            severity: "notice",
+            key: selector === SELECTORS.deposit ? "sign_risk_deposit" : "sign_risk_mint",
+            vars: { amount: amount.toString(), who: short(receiver), token },
+          },
+        ];
+      }
+      case SELECTORS.withdraw:
+      case SELECTORS.redeem: {
+        const { args } = decodeFunctionData({ abi: ABI, data: data as `0x${string}` });
+        const [amount, receiver, owner] = args as unknown as [bigint, string, string];
+        return [
+          {
+            severity: "notice",
+            key: selector === SELECTORS.withdraw ? "sign_risk_withdraw" : "sign_risk_redeem",
+            vars: {
+              amount: amount.toString(),
+              who: short(receiver),
+              owner: short(owner),
+              token,
+            },
           },
         ];
       }

@@ -151,7 +151,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是静
 | 钱包连接（让 account 不再由 agent 提供） | 未开始 |
 | 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、签名页只在那个 worker 的 `/sign`、介绍站 [GitHub Pages](https://vigil-mcp.vercel.app) | 完成 |
 
-`pnpm check`：**368 tests**。`MOSS_SKIP_E2E=1` 之下 342 条完全不连外，其余对 Monad 主网跑模拟（不签名、不花钱）。
+`pnpm check`：**372 tests**。`MOSS_SKIP_E2E=1` 之下 346 条完全不连外，其余对 Monad 主网跑模拟（不签名、不花钱）。
 
 ### 自己验过的（非文件转述）
 
@@ -164,7 +164,7 @@ Monad 主网支持 EIP-7702：带 authorization 的交易 gas 比对照组多 25
 ```bash
 cd app
 pnpm install          # 会自动建 vendor 里的 Moss，不需要外部 checkout
-pnpm check            # typecheck + 368 tests（MOSS_SKIP_E2E=1 只跑离线的 342 条）
+pnpm check            # typecheck + 368 tests（MOSS_SKIP_E2E=1 只跑离线的 346 条）
 pnpm demo             # 终端直接看面板，不需要任何 host
 pnpm demo injection   # 看被注入指令的那一幕
 pnpm build:all        # 面板、签名页、预览页、MCP server
