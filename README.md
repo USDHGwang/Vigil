@@ -5,7 +5,7 @@
 [![Monad](https://img.shields.io/badge/Monad-mainnet%20143-6E54FF)](https://www.monad.xyz/)
 [![MCP](https://img.shields.io/badge/MCP-Apps-000000)](https://modelcontextprotocol.io/)
 
-**English** | [繁體中文](README.zh-TW.md)
+**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
 
 [**Setup**](app/MCP-SETUP.md) · [**Live site**](https://usdhgwang.github.io/Vigil)
 
