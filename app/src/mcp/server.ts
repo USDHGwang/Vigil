@@ -499,9 +499,19 @@ export function createServer(options: ServerOptions = {}): McpServer {
     { mimeType: RESOURCE_MIME_TYPE },
     // 不標回傳型別：SDK 的 ReadResourceResult 在 exactOptionalPropertyTypes 下
     // 跟 ext-apps 的 McpUiReadResourceResult 對不上。讓它從字面量推導。
+    // options.panelHtml 優先。Workers 沒有 fs，`readPanelHtml()` 走
+    // `new URL(..., import.meta.url)`，在 workerd 裡 import.meta.url 不是合法
+    // URL，會丟 "Invalid URL string." ——而這個 handler **是會被呼叫的**：
+    // host 拿 resources/list 看到 ui:// 之後就會 resources/read。先前只有
+    // ServerOptions 宣告了 panelHtml、worker 也傳了，但這裡沒接，所以線上
+    // 部署的面板永遠讀不出來，host 只能退回文字版。
     async () => ({
       contents: [
-        { uri: PANEL_RESOURCE_URI, mimeType: RESOURCE_MIME_TYPE, text: readPanelHtml() },
+        {
+          uri: PANEL_RESOURCE_URI,
+          mimeType: RESOURCE_MIME_TYPE,
+          text: options.panelHtml ?? readPanelHtml(),
+        },
       ],
     }),
   );

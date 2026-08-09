@@ -510,3 +510,37 @@ describe.skipIf(!!process.env.MOSS_SKIP_E2E)("呼叫 tool（對主網實跑）",
     expect(text).toContain("链上行为");
   });
 });
+
+/**
+ * 注入的面板 HTML 要真的被送出去。
+ *
+ * Workers 沒有 fs，`readPanelHtml()` 在那裡會丟 "Invalid URL string."，所以
+ * worker.ts 用 `panelHtml` 把建置時內嵌的那份傳進來。先前 ServerOptions 宣告了
+ * 這個欄位、worker 也傳了，但 resource handler 沒接——於是線上部署的
+ * `resources/read` 永遠失敗、面板永遠渲染不出來，而 Node 上的測試全部照過，
+ * 因為 Node 讀得到檔案。線上實測才發現（2026-08-09）。
+ *
+ * 這條測的是 wiring 本身：給一份認得出來的 HTML，回來的必須是它。它在 Node
+ * 上就會紅，不需要 workerd。
+ */
+describe("panelHtml 注入（無 fs 環境的唯一出口）", () => {
+  const INJECTED = "<!DOCTYPE html><title>injected-panel-sentinel</title>";
+
+  /** SDK 的 contents 是 text | blob 的聯集，測試只關心 text 那一支 */
+  async function readPanel(options: ServerOptions): Promise<string> {
+    const c = await connectServer(options);
+    const res = await c.readResource({ uri: PANEL_RESOURCE_URI });
+    const first = res.contents[0] as { text?: unknown } | undefined;
+    return typeof first?.text === "string" ? first.text : "";
+  }
+
+  it("有傳 panelHtml 就送那一份，不去讀檔", async () => {
+    expect(await readPanel({ signPageUrl: SIGN_PAGE_URL, panelHtml: INJECTED })).toBe(INJECTED);
+  });
+
+  it("沒傳就退回讀檔，stdio 模式不受影響", async () => {
+    const text = await readPanel({ signPageUrl: SIGN_PAGE_URL });
+    expect(text).not.toBe(INJECTED);
+    expect(text.toLowerCase()).toContain("<!doctype html");
+  });
+});

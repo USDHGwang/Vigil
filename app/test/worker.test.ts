@@ -137,3 +137,49 @@ describe("無狀態：請求之間不能互相污染", () => {
     }
   });
 });
+
+/**
+ * 面板 resource 在 Workers 路由上讀得出來。
+ *
+ * 2026-08-09 線上實測抓到：`resources/list` 列得出 `ui://vigil/panel.html`，
+ * `resources/read` 回 `-32603 Invalid URL string.`。resource handler 直接呼叫
+ * `readPanelHtml()`，那條路走 `new URL(..., import.meta.url)`，而 workerd 的
+ * `import.meta.url` 不是合法 URL。`ServerOptions.panelHtml` 早就宣告了、
+ * worker.ts 也傳了，只是 handler 沒接。後果是支援 MCP Apps 的 host 拿不到
+ * 面板，只能退回文字版。
+ *
+ * **這一組跑在 Node 上，重現不了那個失敗**——Node 有 fs、import.meta.url 也
+ * 合法，readPanelHtml() 會成功。真正鎖住 wiring 的那條在 mcp-server.test.ts：
+ * 注入的 panelHtml 必須是被送出去的那一份。這裡守的是路由層還通。
+ */
+describe("面板 resource（MCP Apps 的主要出口）", () => {
+  async function rpc(body: unknown): Promise<string> {
+    const res = await worker.fetch(
+      new Request("https://vigil-mcp.test.workers.dev/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+        body: JSON.stringify(body),
+      }),
+    );
+    expect(res.status).toBe(200);
+    return res.text();
+  }
+
+  it("resources/list 列得出面板", async () => {
+    const text = await rpc({ jsonrpc: "2.0", id: 1, method: "resources/list" });
+    expect(text).toContain("ui://vigil/panel.html");
+  });
+
+  it("resources/read 回得出面板 HTML，不是錯誤", async () => {
+    const text = await rpc({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "resources/read",
+      params: { uri: "ui://vigil/panel.html" },
+    });
+    expect(text).not.toContain("Invalid URL string");
+    expect(text).not.toContain('"error"');
+    expect(text.toLowerCase()).toContain("<!doctype html");
+    expect(text.length).toBeGreaterThan(10_000);
+  });
+});

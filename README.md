@@ -181,7 +181,7 @@ that, and neither is a bug we plan to fix in this shape:
 ```bash
 cd app
 pnpm install          # builds the vendored Moss, no external checkout needed
-pnpm check            # typecheck + 364 tests (MOSS_SKIP_E2E=1 for the offline 338)
+pnpm check            # typecheck + 368 tests (MOSS_SKIP_E2E=1 for the offline 342)
 pnpm demo             # the panel in your terminal, no host required
 pnpm demo injection   # the injected-instruction case
 pnpm build:all        # panel, signing page, preview page, MCP server
@@ -202,7 +202,7 @@ Connecting to Claude Desktop: [app/MCP-SETUP.md](app/MCP-SETUP.md).
 | Wallet connect (so the account stops coming from the agent) | not started |
 | Hosted deployment — MCP server on [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health), signing page at that worker's `/sign` and nowhere else, marketing site on [GitHub Pages](https://vigil-mcp.vercel.app) | done |
 
-`pnpm check`: **364 tests**. `MOSS_SKIP_E2E=1` runs 338 of them with no network
+`pnpm check`: **368 tests**. `MOSS_SKIP_E2E=1` runs 342 of them with no network
 at all; the rest simulate against Monad mainnet (no signing, no cost).
 
 ### Limitations
