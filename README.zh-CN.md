@@ -151,7 +151,7 @@ ERC-7730 的 clear signing 解的是「看不看得懂」，它的 intent 是静
 | 钱包连接（让 account 不再由 agent 提供） | 未开始 |
 | 部署——MCP server 在 [vigil-mcp.usdhgwang.workers.dev](https://vigil-mcp.usdhgwang.workers.dev/health)、签名页只在那个 worker 的 `/sign`、介绍站 [GitHub Pages](https://vigil-mcp.vercel.app) | 完成 |
 
-`pnpm check`：**364 tests**。`MOSS_SKIP_E2E=1` 之下 338 条完全不连外，其余对 Monad 主网跑模拟（不签名、不花钱）。
+`pnpm check`：**368 tests**。`MOSS_SKIP_E2E=1` 之下 342 条完全不连外，其余对 Monad 主网跑模拟（不签名、不花钱）。
 
 ### 自己验过的（非文件转述）
 
